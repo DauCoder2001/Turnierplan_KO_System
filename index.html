@@ -182,6 +182,15 @@
         #print-report h2 { font-size: 1.1rem; margin-top: 18px; }
         #print-report p.sub { color: #555; margin-top: 0; margin-bottom: 16px; }
 
+        /* Fussnote am Berichtsende: Vermerk zu wiederholter Auslosung und
+           von Hand vorgenommenen Gruppenwechseln. */
+        #print-report .draw-note {
+            margin-top: 22px; padding-top: 8px; border-top: 1px solid #dee2e6;
+            font-size: 0.8rem; color: #555; line-height: 1.5;
+            page-break-inside: avoid; break-inside: avoid;
+        }
+        #print-report .draw-note b { color: #2c3e50; }
+
         /* Ergebnisse im Bericht: die Gruppen stehen nebeneinander, damit der
            Ausdruck weniger Seiten benoetigt. Aeusseres Raster ohne Rahmen,
            je Zelle eine eigene Rundentabelle. */
@@ -448,6 +457,11 @@
     let pendingSwap = null;                 // Offener Tauschdialog: { idxOut, from, to } oder null
     let groupCellsSig = '';                 // Kennung der zuletzt gezeichneten Gruppenspalte
     let groupGridSig = '';                  // Kennung des zuletzt aufgebauten Gruppenrasters
+    // Nachweis fuer den Bericht: Wie oft wurde ausgelost und welche Spieler wurden
+    // danach von Hand getauscht. Eine Neuauslosung leert das Tausch-Protokoll,
+    // weil sich die Tausche immer auf die vorherige Auslosung bezogen haben.
+    let drawCount = 0;                      // Anzahl der durchgefuehrten Auslosungen
+    let swapLog = [];                       // [{ idxOut, idxIn, from, to, at }]
 
     // ---------------------------------------------------------------------
     // Initialisierung
@@ -700,6 +714,8 @@
         highlighted.clear();
         ko = null;
         tournamentStart = null;
+        drawCount = 0;
+        swapLog = [];
 
         document.getElementById('player-count').value = String(playerCount);
         document.getElementById('group-count').value = String(groupCount);
@@ -895,6 +911,11 @@
         ko = null;
         tournamentStart = null;
         initScoresToZero();
+
+        // Auslosung mitzaehlen; frueher getauschte Spieler beziehen sich auf die
+        // alte Zuordnung und werden deshalb aus dem Protokoll entfernt.
+        drawCount++;
+        swapLog = [];
 
         renderPlayerInputs();
         renderAll();
@@ -1193,6 +1214,10 @@
 
         const nameOut = currentNames[idxOut];
         const nameIn = currentNames[idxIn];
+        // Fuer den Bericht festhalten, wer wann von Hand die Gruppe gewechselt hat.
+        // Gespeichert werden die Startnummern, damit spaeter korrigierte Spielernamen
+        // auch im Bericht richtig erscheinen.
+        swapLog.push({ idxOut: idxOut, idxIn: idxIn, from: from, to: to, at: new Date().toISOString() });
         closeSwapPanel();
         groupCellsSig = '';      // Auswahlfelder mit der neuen Zuordnung aufbauen
         renderAll();
@@ -2136,7 +2161,9 @@
             koScores: Object.assign({}, koScores),
             manualOrder: JSON.parse(JSON.stringify(manualOrder)),
             ko: ko ? JSON.parse(JSON.stringify(ko)) : null,
-            tournamentStart: tournamentStart
+            tournamentStart: tournamentStart,
+            drawCount: drawCount,
+            swapLog: JSON.parse(JSON.stringify(swapLog))
         };
     }
 
@@ -2183,6 +2210,13 @@
 
         // Aeltere Staende kennen keinen Turnierstart, dann bleibt die Zeitspanne im Bericht leer
         tournamentStart = snap.tournamentStart || null;
+        // Aeltere Staende kennen weder Auslosungszaehler noch Tausch-Protokoll.
+        // Dann gilt eine bereits vorhandene Zuordnung als einmalige Auslosung
+        // ohne Handeingriff, der Vermerk im Bericht entfaellt.
+        drawCount = (typeof snap.drawCount === 'number' && snap.drawCount >= 0)
+            ? snap.drawCount
+            : (isDrawn() ? 1 : 0);
+        swapLog = Array.isArray(snap.swapLog) ? snap.swapLog.slice() : [];
         highlighted.clear();
 
         fillPlayerCountSelect();
@@ -2343,6 +2377,32 @@
         const start = new Date(tournamentStart);
         if (isNaN(start.getTime())) return '';
         return ` &middot; Von ${formatTimeDE(start)} bis ${formatTimeDE(ende)}`;
+    }
+
+    // Fussnote am Berichtsende. Sie erscheint nur, wenn vom Regelfall abgewichen
+    // wurde, also mehr als einmal ausgelost oder mindestens ein Spieler von Hand
+    // die Gruppe gewechselt hat. Sonst bleibt der Rueckgabewert leer.
+    function buildDrawNote() {
+        if (drawCount <= 1 && swapLog.length === 0) return '';
+
+        const zeilen = [];
+        if (drawCount > 1) {
+            zeilen.push(`Die Gruppen wurden ${drawCount} mal ausgelost. Gewertet wird die letzte Auslosung.`);
+        }
+        if (swapLog.length > 0) {
+            zeilen.push(swapLog.length === 1
+                ? 'Ein Gruppenwechsel von Hand nach der Auslosung:'
+                : `${swapLog.length} Gruppenwechsel von Hand nach der Auslosung:`);
+            swapLog.forEach(s => {
+                const d = s.at ? new Date(s.at) : null;
+                const zeit = (d && !isNaN(d.getTime())) ? formatTimeDE(d) + ' Uhr' : 'ohne Zeitangabe';
+                const nOut = currentNames[s.idxOut] || 'unbekannt';
+                const nIn  = currentNames[s.idxIn]  || 'unbekannt';
+                zeilen.push(`${zeit}: ${esc(nOut)} von Gruppe ${esc(s.from)} nach Gruppe ${esc(s.to)}, ` +
+                    `${esc(nIn)} von Gruppe ${esc(s.to)} nach Gruppe ${esc(s.from)}.`);
+            });
+        }
+        return `<div class="draw-note"><b>Hinweise zur Auslosung</b><br>${zeilen.join('<br>')}</div>`;
     }
 
     // Der Browser nutzt beim Druck-Dialog ("Als PDF speichern") den document.title
@@ -2513,6 +2573,9 @@
             }
             html += `</tbody></table>`;
         }
+
+        // Fussnote zum Schluss, nur bei wiederholter Auslosung oder Handeingriff
+        html += buildDrawNote();
 
         document.getElementById('print-report').innerHTML = html;
     }
