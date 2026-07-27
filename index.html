@@ -27,12 +27,19 @@
         select { padding: 6px 10px; border-radius: 4px; border: 1px solid #117a65; font-size: 1rem; font-weight: bold; background-color: #fff; cursor: pointer; }
         select.small { padding: 4px 6px; font-size: 0.9rem; }
 
-        .grid-layout { display: table; width: 100%; margin-top: 10px; }
-        .grid-row { display: table-row; }
-        .grid-col-left { display: table-cell; width: 360px; vertical-align: top; padding-right: 25px; }
-        .grid-col-right { display: table-cell; vertical-align: top; }
+        .grid-layout { display: flex; gap: 25px; align-items: flex-start; width: 100%; margin-top: 10px; }
+        /* row-Ebene aus dem Layout nehmen, damit die Spalten direkte Flex-Kinder werden */
+        .grid-row { display: contents; }
+        /* Jede Spalte bekommt eine eigene Maximalhoehe und einen eigenen Scrollbereich (an Fensterhoehe gekoppelt) */
+        .grid-col-left { flex: 0 0 360px; max-height: calc(100vh - 200px); overflow-y: auto; padding-right: 10px; }
+        .grid-col-right { flex: 1; min-width: 0; max-height: calc(100vh - 200px); overflow-y: auto; }
         .card { background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 20px; margin-bottom: 20px; }
         h2 { color: #2c3e50; font-size: 1.15rem; margin-top: 0; margin-bottom: 15px; border-left: 4px solid #16a085; padding-left: 8px; }
+        /* Kopfzeile mit Auf-/Zuklapp-Button fuer die Spielereingabe */
+        .player-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+        .player-header h2 { margin-bottom: 0; }
+        .toggle-players-btn { background-color: #16a085; color: #fff; border: none; padding: 7px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.85rem; white-space: nowrap; }
+        .toggle-players-btn:hover { background-color: #117a65; }
         h3 { color: #2c3e50; font-size: 1rem; margin: 18px 0 8px 0; }
 
         .player-input-row { display: table; width: 100%; margin-bottom: 6px; }
@@ -163,8 +170,8 @@
         .seed-panel { background: #eef7fb; border-left: 3px solid #2980b9; border-radius: 3px; padding: 10px 12px; margin-bottom: 14px; font-size: 0.85rem; color: #1b4f72; }
         .seed-panel.locked { background: #f1f3f5; border-left-color: #adb5bd; color: #495057; }
         .seed-panel h4 { margin: 0 0 6px 0; font-size: 0.9rem; color: #2c3e50; }
-        .seed-list { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 8px 0; }
-        .seed-row { display: flex; align-items: center; gap: 7px; padding: 2px 0; flex: 1 1 300px; }
+        .seed-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 4px 20px; margin: 8px 0; }
+        .seed-row { display: flex; align-items: center; gap: 7px; padding: 2px 0; }
         .seed-slot { width: 42px; font-weight: bold; color: #fff; background: #2980b9; border-radius: 10px; text-align: center; font-size: 0.72rem; padding: 2px 0; }
         .seed-name { flex: 1; font-weight: 600; color: #2c3e50; }
         .seed-btn { background: #2980b9; color: #fff; border: none; border-radius: 3px; padding: 1px 8px; cursor: pointer; font-size: 0.9rem; line-height: 1.3; }
@@ -248,6 +255,33 @@
             #print-report > *:last-child { margin-bottom: 0 !important; }
             .no-print { display: none !important; }
         }
+
+        /* --- Fragezeichen-Tooltip (Hilfe zu Ueberschriften) --- */
+        /* Kopfzeile: Ueberschrift und Fragezeichen nebeneinander */
+        .h2-with-help { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
+        .h2-with-help h2 { margin-bottom: 0; }
+        /* Fragezeichen-Icon */
+        .help-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 18px; height: 18px; border-radius: 50%;
+            border: 1.5px solid #16a085; color: #16a085;
+            font-size: 12px; font-weight: bold; line-height: 1;
+            cursor: help; user-select: none; flex: 0 0 auto; background: #fff;
+        }
+        .help-icon:hover, .help-icon:focus { background: #16a085; color: #fff; outline: none; }
+        /* Tooltip-Text: versteckt, wird per JS als fixed positioniert und ist damit
+           unabhaengig vom Scrollbereich der Spalte (wird nicht abgeschnitten) */
+        .help-body {
+            display: none; position: fixed; z-index: 9999;
+            max-width: 300px; background: #2c3e50; color: #fff;
+            font-size: 0.82rem; font-weight: normal; line-height: 1.45;
+            padding: 10px 12px; border-radius: 6px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+        }
+        .help-body b { color: #7fd8c4; }
+        /* Fragezeichen im Ausdruck ausblenden */
+        @media print { .help-icon { display: none !important; } }
+
     </style>
 </head>
 <body>
@@ -289,20 +323,22 @@
             <div class="grid-col-left">
 
                 <div class="card">
-                    <h2>1. Spieler benennen</h2>
+                    <div class="player-header">
+                        <div class="h2-with-help">
+                            <h2>1. Spieler benennen</h2>
+                            <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Gruppe über das Auswahlfeld ändern. Der Wechsel erfolgt immer als Tausch mit einem Spieler der Zielgruppe, die Gruppenstärken bleiben dadurch gleich. Nach dem ersten eingetragenen Ergebnis ist die Zuordnung gesperrt.</span></span>
+                        </div>
+                        <button type="button" id="btn-toggle-players" class="toggle-players-btn no-print" aria-expanded="true">Schließen</button>
+                    </div>
                     <div id="player-inputs-container"></div>
                     <div id="swap-panel" class="swap-panel" style="display:none;"></div>
                     <div id="group-edit-note" class="group-edit-note"></div>
                 </div>
 
                 <div class="card">
-                    <h2>2. Gruppen auslosen</h2>
-                    <div class="info-note">
-                        Die Teilnehmer werden reihum und zufällig auf die Gruppen verteilt.
-                        Bei 2 Gruppen kommen die ersten 4 jeder Gruppe weiter, bei 4 Gruppen die ersten 2 -
-                        das KO-Feld umfasst dadurch immer 8 Spieler.
-                        Die Zuordnung lässt sich anschließend oben über das Auswahlfeld hinter dem Spielernamen
-                        von Hand tauschen, solange noch kein Ergebnis eingetragen ist.
+                    <div class="h2-with-help">
+                        <h2>2. Gruppen auslosen</h2>
+                        <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Die Teilnehmer werden reihum und zufällig auf die Gruppen verteilt. Bei 2 Gruppen kommen die ersten 4 jeder Gruppe weiter, bei 4 Gruppen die ersten 2 - das KO-Feld umfasst dadurch immer 8 Spieler. Die Zuordnung lässt sich anschließend oben über das Auswahlfeld hinter dem Spielernamen von Hand tauschen, solange noch kein Ergebnis eingetragen ist.</span></span>
                     </div>
                     <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
                         <button id="btn-draw" class="btn btn-primary">Gruppen auslosen</button>
@@ -338,24 +374,17 @@
             <div class="grid-col-right">
 
                 <div class="card">
-                    <h2>3. Phase 1 - Gruppenphase <span id="game-type-display" style="font-weight:normal; color:#7f8c8d; font-size:0.9rem;">(8-Ball)</span></h2>
-                    <div class="info-note">
-                        In jeder Gruppe spielt jeder gegen jeden.
-                        Reihenfolge bei Gleichheit: 1. Punkte (Siege) - 2. Satz-Differenz - 3. Direkter Vergleich (H2H) - 4. Stichkampf (SK, manuell durch Turnierleitung).<br>
-                        Ein Spiel gilt erst als beendet, wenn ein Spieler die eingestellte Race-to-Vorgabe an Sätzen erreicht hat.
-                        Der Stichkampf (Reihenfolge durch die Turnierleitung festlegen) wird erst angeboten, wenn alle Spiele der jeweiligen Gruppe beendet sind.<br>
-                        Tipp: Links Spieler ankreuzen, um deren Spiele im Plan rot hervorzuheben.
+                    <div class="h2-with-help">
+                        <h2>3. Phase 1 - Gruppenphase <span id="game-type-display" style="font-weight:normal; color:#7f8c8d; font-size:0.9rem;">(8-Ball)</span></h2>
+                        <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">In jeder Gruppe spielt jeder gegen jeden. Reihenfolge bei Gleichheit: 1. Punkte (Siege) - 2. Satz-Differenz - 3. Direkter Vergleich (H2H) - 4. Stichkampf (SK, manuell durch Turnierleitung).<br>Ein Spiel gilt erst als beendet, wenn ein Spieler die eingestellte Race-to-Vorgabe an Sätzen erreicht hat. Der Stichkampf (Reihenfolge durch die Turnierleitung festlegen) wird erst angeboten, wenn alle Spiele der jeweiligen Gruppe beendet sind.<br>Tipp: Links Spieler ankreuzen, um deren Spiele im Plan rot hervorzuheben.</span></span>
                     </div>
                     <div class="group-grid" id="group-grid"></div>
                 </div>
 
                 <div class="card">
-                    <h2>4. Phase 2 - KO-Runde</h2>
-                    <div class="info-note">
-                        Die 8 Qualifikanten ziehen in den KO-Baum ein: Viertelfinale, Halbfinale, Finale und Spiel um Platz 3.
-                        Wer verliert, scheidet aus. Mit dem Start werden die Gruppen-Platzierungen fixiert;
-                        spätere Korrekturen in Phase 1 ändern die Paarungen nicht mehr.<br>
-                        Das Spiel um Platz 3 wird mit der Race-to-Vorgabe des Halbfinals gespielt.
+                    <div class="h2-with-help">
+                        <h2>4. Phase 2 - KO-Runde</h2>
+                        <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Die 8 Qualifikanten ziehen in den KO-Baum ein: Viertelfinale, Halbfinale, Finale und Spiel um Platz 3. Wer verliert, scheidet aus. Mit dem Start werden die Gruppen-Platzierungen fixiert; spätere Korrekturen in Phase 1 ändern die Paarungen nicht mehr.<br>Das Spiel um Platz 3 wird mit der Race-to-Vorgabe des Halbfinals gespielt.</span></span>
                     </div>
                     <div id="ko-status" class="hint-box info"></div>
                     <div id="pairing-option-row" style="margin-bottom:12px; display:none;">
@@ -408,15 +437,22 @@
         "Sauron", "Kermit", "Hulk", "Gollum", "Grobi", "Dagobert", "Yoda", "Rambo",
         "Merlin", "Pumuckl", "Obelix", "Gandalf", "Godzilla", "Batman", "Spock", "Fry",
         "Spieler 17", "Spieler 18", "Spieler 19", "Spieler 20",
-        "Spieler 21", "Spieler 22", "Spieler 23", "Spieler 24"
+        "Spieler 21", "Spieler 22", "Spieler 23", "Spieler 24",
+        "Spieler 25", "Spieler 26", "Spieler 27", "Spieler 28",
+        "Spieler 29", "Spieler 30", "Spieler 31", "Spieler 32"
     ];
 
     const STORAGE_PREFIX = 'billard-ko:';
     const STORAGE_VERSION = 1;
-    const MIN_PLAYERS = 12;
-    const MAX_PLAYERS = 24;
+    const MIN_PLAYERS = 15;
+    const MAX_PLAYERS = 32;
     const ALL_GROUPS = ['A', 'B', 'C', 'D'];
     const RACE_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+
+    // Anpassung der Setzlisten-Reihenfolge durch die Turnierleitung.
+    // Vorerst deaktiviert: keine Pfeiltasten, kein "Setzliste freigeben"-Button.
+    // Auf true setzen, um die Funktion wieder einzublenden.
+    const SEED_REORDER_ENABLED = false;
 
     // Aufbau des KO-Baums. Die vier Viertelfinals beziehen ihre Spieler aus der
     // Setzliste, alle weiteren Spiele aus den Ergebnissen der Vorrunde.
@@ -1885,7 +1921,7 @@
         btnStart.style.display = 'none';
         btnReset.style.display = '';
         const locked = seedsLocked();
-        btnUnlock.style.display = locked ? '' : 'none';
+        btnUnlock.style.display = (SEED_REORDER_ENABLED && locked) ? '' : 'none';
 
         statusBox.className = 'hint-box info';
         statusBox.innerHTML = '<b>KO-Runde läuft.</b> Die Gruppen-Platzierungen sind fixiert. ' +
@@ -1912,13 +1948,16 @@
 
         const rows = ko.seeds.map((idx, k) => {
             const grp = groupOf(idx);
+            const buttons = SEED_REORDER_ENABLED
+                ? `<button class="seed-btn" data-pos="${k}" data-move="up" ${(k === 0 || locked) ? 'disabled' : ''} title="Nach oben">&uarr;</button>
+                    <button class="seed-btn" data-pos="${k}" data-move="down" ${(k === ko.seeds.length - 1 || locked) ? 'disabled' : ''} title="Nach unten">&darr;</button>`
+                : '';
             return `
                 <div class="seed-row">
                     <span class="seed-slot" title="${esc(seedSlotTitle(k, ko.groupCount))}">${labels[k]}</span>
                     <span class="seed-name"><span data-pname="${idx}">${esc(currentNames[idx])}</span>
                         <span class="gbadge ${grp ? grp.toLowerCase() : 'none'}" style="margin-left:5px;">${grp || '-'}</span></span>
-                    <button class="seed-btn" data-pos="${k}" data-move="up" ${(k === 0 || locked) ? 'disabled' : ''} title="Nach oben">&uarr;</button>
-                    <button class="seed-btn" data-pos="${k}" data-move="down" ${(k === ko.seeds.length - 1 || locked) ? 'disabled' : ''} title="Nach unten">&darr;</button>
+                    ${buttons}
                 </div>`;
         }).join('');
 
@@ -1926,15 +1965,19 @@
         panel.style.display = 'block';
         panel.innerHTML =
             `<h4>Setzliste der 8 Qualifikanten</h4>` +
-            `<div>${locked
-                ? 'Gesperrt, da bereits KO-Ergebnisse eingetragen sind. Zum Ändern "Setzliste freigeben" verwenden - dabei werden alle KO-Ergebnisse verworfen.'
-                : 'Die Turnierleitung kann die Reihenfolge anpassen. Jede Verschiebung baut die Viertelfinal-Paarungen neu auf.'}</div>` +
+            (SEED_REORDER_ENABLED
+                ? `<div>${locked
+                    ? 'Gesperrt, da bereits KO-Ergebnisse eingetragen sind. Zum Ändern "Setzliste freigeben" verwenden - dabei werden alle KO-Ergebnisse verworfen.'
+                    : 'Die Turnierleitung kann die Reihenfolge anpassen. Jede Verschiebung baut die Viertelfinal-Paarungen neu auf.'}</div>`
+                : '') +
             `<div class="seed-list">${rows}</div>`;
 
-        panel.querySelectorAll('.seed-btn').forEach(btn => btn.addEventListener('click', (e) => {
-            const t = e.currentTarget;
-            moveSeed(parseInt(t.dataset.pos), t.dataset.move === 'up' ? -1 : 1);
-        }));
+        if (SEED_REORDER_ENABLED) {
+            panel.querySelectorAll('.seed-btn').forEach(btn => btn.addEventListener('click', (e) => {
+                const t = e.currentTarget;
+                moveSeed(parseInt(t.dataset.pos), t.dataset.move === 'up' ? -1 : 1);
+            }));
+        }
     }
 
     // Je Runde eine eigene Tabelle
@@ -2579,6 +2622,56 @@
 
         document.getElementById('print-report').innerHTML = html;
     }
+        // Spielereingabe auf-/zuklappen (Standard: aufgeklappt)
+        (function() {
+            const btn = document.getElementById('btn-toggle-players');
+            const box = document.getElementById('player-inputs-container');
+            if (btn && box) {
+                btn.addEventListener('click', () => {
+                    const offen = box.style.display !== 'none';
+                    box.style.display = offen ? 'none' : '';
+                    btn.textContent = offen ? 'Öffnen' : 'Schließen';
+                    btn.setAttribute('aria-expanded', offen ? 'false' : 'true');
+                });
+            }
+        })();
+
+    /* ---------- Fragezeichen-Tooltips ---------- */
+    /* Zeigt den versteckten Hilfetext (.help-body) beim Ueberfahren oder Fokussieren
+       des Fragezeichens als fixed positioniertes Feld an - dadurch unabhaengig vom
+       Scrollbereich der Spalte (wird nicht abgeschnitten). */
+    (function () {
+        function positionHelp(iconEl, body) {
+            body.style.display = 'block';
+            var r = iconEl.getBoundingClientRect();
+            var bw = body.offsetWidth;
+            var bh = body.offsetHeight;
+            var top = r.bottom + 8;          // standardmaessig unter dem Icon
+            var left = r.left;
+            if (left + bw > window.innerWidth - 10) { left = window.innerWidth - bw - 10; }
+            if (left < 10) { left = 10; }
+            if (top + bh > window.innerHeight - 10) { top = r.top - bh - 8; }  // sonst nach oben klappen
+            body.style.top = top + 'px';
+            body.style.left = left + 'px';
+        }
+        function hideHelp(body) { body.style.display = 'none'; }
+        function initHelpTooltips() {
+            document.querySelectorAll('.help-icon').forEach(function (iconEl) {
+                var body = iconEl.querySelector('.help-body');
+                if (!body) { return; }
+                iconEl.addEventListener('mouseenter', function () { positionHelp(iconEl, body); });
+                iconEl.addEventListener('mouseleave', function () { hideHelp(body); });
+                iconEl.addEventListener('focus',      function () { positionHelp(iconEl, body); });
+                iconEl.addEventListener('blur',       function () { hideHelp(body); });
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initHelpTooltips);
+        } else {
+            initHelpTooltips();
+        }
+    })();
+
 </script>
 </body>
 </html>
