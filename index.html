@@ -257,16 +257,14 @@
         }
 
         /* --- Fragezeichen-Tooltip (Hilfe zu Ueberschriften) --- */
-        /* Kopfzeile: Ueberschrift und Fragezeichen nebeneinander */
-        .h2-with-help { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
-        .h2-with-help h2 { margin-bottom: 0; }
-        /* Fragezeichen-Icon */
+        /* Fragezeichen-Icon steht inline direkt hinter dem Ueberschrifttext */
         .help-icon {
             display: inline-flex; align-items: center; justify-content: center;
             width: 18px; height: 18px; border-radius: 50%;
             border: 1.5px solid #16a085; color: #16a085;
             font-size: 12px; font-weight: bold; line-height: 1;
-            cursor: help; user-select: none; flex: 0 0 auto; background: #fff;
+            cursor: help; user-select: none; background: #fff;
+            vertical-align: middle; margin-left: 6px;
         }
         .help-icon:hover, .help-icon:focus { background: #16a085; color: #fff; outline: none; }
         /* Tooltip-Text: versteckt, wird per JS als fixed positioniert und ist damit
@@ -307,7 +305,7 @@
                 <option value="Multi-Ball">Multi-Ball</option>
             </select>
             <div class="sep"></div>
-            <label for="race-group" title="Race to in der Gruppenphase">Race Gruppe:</label>
+            <label for="race-group" title="Race to in der Gruppenphase">Race to:</label>
             <select id="race-group" class="small"></select>
             <label for="race-qf" title="Race to im Viertelfinale">VF:</label>
             <select id="race-qf" class="small"></select>
@@ -324,10 +322,7 @@
 
                 <div class="card">
                     <div class="player-header">
-                        <div class="h2-with-help">
-                            <h2>1. Spieler benennen</h2>
-                            <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Gruppe über das Auswahlfeld ändern. Der Wechsel erfolgt immer als Tausch mit einem Spieler der Zielgruppe, die Gruppenstärken bleiben dadurch gleich. Nach dem ersten eingetragenen Ergebnis ist die Zuordnung gesperrt.</span></span>
-                        </div>
+                        <h2>1. Spieler benennen <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Gruppe über das Auswahlfeld ändern. Der Wechsel erfolgt immer als Tausch mit einem Spieler der Zielgruppe, die Gruppenstärken bleiben dadurch gleich. Nach dem ersten eingetragenen Ergebnis ist die Zuordnung gesperrt.</span></span></h2>
                         <button type="button" id="btn-toggle-players" class="toggle-players-btn no-print" aria-expanded="true">Schließen</button>
                     </div>
                     <div id="player-inputs-container"></div>
@@ -336,10 +331,7 @@
                 </div>
 
                 <div class="card">
-                    <div class="h2-with-help">
-                        <h2>2. Gruppen auslosen</h2>
-                        <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Die Teilnehmer werden reihum und zufällig auf die Gruppen verteilt. Bei 2 Gruppen kommen die ersten 4 jeder Gruppe weiter, bei 4 Gruppen die ersten 2 - das KO-Feld umfasst dadurch immer 8 Spieler. Die Zuordnung lässt sich anschließend oben über das Auswahlfeld hinter dem Spielernamen von Hand tauschen, solange noch kein Ergebnis eingetragen ist.</span></span>
-                    </div>
+                    <h2>2. Gruppen auslosen <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Die Teilnehmer werden reihum und zufällig auf die Gruppen verteilt. Bei 2 Gruppen kommen die ersten 4 jeder Gruppe weiter, bei 4 Gruppen die ersten 2 - das KO-Feld umfasst dadurch immer 8 Spieler. Die Zuordnung lässt sich anschließend oben über das Auswahlfeld hinter dem Spielernamen von Hand tauschen, solange noch kein Ergebnis eingetragen ist.</span></span></h2>
                     <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
                         <button id="btn-draw" class="btn btn-primary">Gruppen auslosen</button>
                         <button id="btn-clear-scores" class="btn btn-secondary" title="Alle Ergebnisse auf 0 zurücksetzen, Gruppen bleiben">Ergebnisse zurücksetzen</button>
@@ -374,18 +366,12 @@
             <div class="grid-col-right">
 
                 <div class="card">
-                    <div class="h2-with-help">
-                        <h2>3. Phase 1 - Gruppenphase <span id="game-type-display" style="font-weight:normal; color:#7f8c8d; font-size:0.9rem;">(8-Ball)</span></h2>
-                        <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">In jeder Gruppe spielt jeder gegen jeden. Reihenfolge bei Gleichheit: 1. Punkte (Siege) - 2. Satz-Differenz - 3. Direkter Vergleich (H2H) - 4. Stichkampf (SK, manuell durch Turnierleitung).<br>Ein Spiel gilt erst als beendet, wenn ein Spieler die eingestellte Race-to-Vorgabe an Sätzen erreicht hat. Der Stichkampf (Reihenfolge durch die Turnierleitung festlegen) wird erst angeboten, wenn alle Spiele der jeweiligen Gruppe beendet sind.<br>Tipp: Links Spieler ankreuzen, um deren Spiele im Plan rot hervorzuheben.</span></span>
-                    </div>
+                    <h2>3. Phase 1 - Gruppenphase <span id="game-type-display" style="font-weight:normal; color:#7f8c8d; font-size:0.9rem;">(8-Ball)</span> <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">In jeder Gruppe spielt jeder gegen jeden. Reihenfolge bei Gleichheit: 1. Punkte (Siege) - 2. Satz-Differenz - 3. Direkter Vergleich (H2H) - 4. Stichkampf (SK, manuell durch Turnierleitung).<br>Ein Spiel gilt erst als beendet, wenn ein Spieler die eingestellte Race-to-Vorgabe an Sätzen erreicht hat. Der Stichkampf (Reihenfolge durch die Turnierleitung festlegen) wird erst angeboten, wenn alle Spiele der jeweiligen Gruppe beendet sind.<br>Tipp: Links Spieler ankreuzen, um deren Spiele im Plan rot hervorzuheben.</span></span></h2>
                     <div class="group-grid" id="group-grid"></div>
                 </div>
 
                 <div class="card">
-                    <div class="h2-with-help">
-                        <h2>4. Phase 2 - KO-Runde</h2>
-                        <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Die 8 Qualifikanten ziehen in den KO-Baum ein: Viertelfinale, Halbfinale, Finale und Spiel um Platz 3. Wer verliert, scheidet aus. Mit dem Start werden die Gruppen-Platzierungen fixiert; spätere Korrekturen in Phase 1 ändern die Paarungen nicht mehr.<br>Das Spiel um Platz 3 wird mit der Race-to-Vorgabe des Halbfinals gespielt.</span></span>
-                    </div>
+                    <h2>4. Phase 2 - KO-Runde <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Die 8 Qualifikanten ziehen in den KO-Baum ein: Viertelfinale, Halbfinale, Finale und Spiel um Platz 3. Wer verliert, scheidet aus. Mit dem Start werden die Gruppen-Platzierungen fixiert; spätere Korrekturen in Phase 1 ändern die Paarungen nicht mehr.<br>Das Spiel um Platz 3 wird mit der Race-to-Vorgabe des Halbfinals gespielt.</span></span></h2>
                     <div id="ko-status" class="hint-box info"></div>
                     <div id="pairing-option-row" style="margin-bottom:12px; display:none;">
                         <label for="pairing-option" style="font-size:0.85rem; font-weight:600; color:#495057; margin-right:6px;">Paarungsschema Viertelfinale:</label>
@@ -454,6 +440,10 @@
     // Auf true setzen, um die Funktion wieder einzublenden.
     const SEED_REORDER_ENABLED = false;
 
+    // Anzeige des Setzlisten-Panels ("Setzliste der 8 Qualifikanten") oberhalb des KO-Baums.
+    // Vorerst ausgeblendet. Auf true setzen, um das Panel wieder einzublenden.
+    const SEED_PANEL_ENABLED = false;
+
     // Aufbau des KO-Baums. Die vier Viertelfinals beziehen ihre Spieler aus der
     // Setzliste, alle weiteren Spiele aus den Ergebnissen der Vorrunde.
     // take: 'w' = Sieger, 'l' = Verlierer des angegebenen Spiels.
@@ -486,7 +476,7 @@
     let tieGroups = {};                     // Gleichstandsgruppen der zuletzt gerenderten Tabellen
     let highlighted = new Set();
     let raceGroup = 3, raceQF = 3, raceSF = 3, raceFinal = 3;
-    let pairingOption = 1;                  // Paarungsschema Viertelfinale (nur bei 4 Gruppen)
+    let pairingOption = 1;                  // Paarungsschema Viertelfinale (wählbar nur bei 2 Gruppen: 1=Standard, 2=über Kreuz)
     // KO-Runde: null oder { seeds: [8 Startnummern], option, groupCount, ranking: { A: [idx...] } }
     let ko = null;
     let tournamentStart = null;             // Zeitpunkt des ersten eingetragenen Ergebnisses als ISO-String
@@ -742,6 +732,8 @@
 
     function initTournament(num) {
         playerCount = num;
+        // Option 2 (über Kreuz) gibt es nur bei zwei Gruppen; bei vier Gruppen immer Standard.
+        if (groupCount === 4) pairingOption = 1;
         currentNames = DEFAULT_NAMES.slice(0, num);
         resetGroupState();
         scores = {};
@@ -1705,13 +1697,20 @@
     }
 
     // Viertelfinal-Paarungen als Indizes der Setzliste.
-    // Zwei Gruppen: A1-B4, B2-A3, B1-A4, A2-B3 (Gruppenerste treffen sich frühestens im Finale).
-    // Vier Gruppen, Option 1: G1E-G2Z, G2E-G1Z, G3E-G4Z, G4E-G3Z.
-    // Vier Gruppen, Option 2: G1E-G4Z, G2E-G3Z, G3E-G2Z, G4E-G1Z (über Kreuz).
+    // Zwei Gruppen, Option 1 (Standard): A1-B4, B2-A3, B1-A4, A2-B3 (Gruppenerste treffen sich frühestens im Finale).
+    // Zwei Gruppen, Option 2 (über Kreuz): G1E-G2V, G1Z-G2D, G2E-G1V, G2Z-G1D.
+    //   Dadurch stehen Gruppe 1 (Erster/Zweiter) und Gruppe 2 (Erster/Zweiter) je in derselben Baumhälfte.
+    // Vier Gruppen: G1E-G2Z, G2E-G1Z, G3E-G4Z, G4E-G3Z (Standard).
+    //   Option 2 wird nicht mehr angeboten; ältere Speicherstände mit Option 2 (über Kreuz)
+    //   bleiben aber ladbar und werden weiter korrekt dargestellt.
     function qfSlotPairs(gc, opt) {
         const g = gc || groupCount;
-        if (g === 2) return [[0, 7], [5, 2], [4, 3], [1, 6]];
-        if ((opt || pairingOption) === 2) return [[0, 7], [1, 6], [2, 5], [3, 4]];
+        const o = opt || pairingOption;
+        if (g === 2) {
+            if (o === 2) return [[0, 7], [1, 6], [4, 3], [5, 2]];
+            return [[0, 7], [5, 2], [4, 3], [1, 6]];
+        }
+        if (o === 2) return [[0, 7], [1, 6], [2, 5], [3, 4]];
         return [[0, 5], [1, 4], [2, 7], [3, 6]];
     }
 
@@ -1886,9 +1885,10 @@
         const bracket = document.getElementById('ko-bracket');
         const optRow = document.getElementById('pairing-option-row');
 
-        // Paarungsschema ist nur bei vier Gruppen wählbar
+        // Paarungsschema ist nur bei zwei Gruppen wählbar (Option 2 = über Kreuz).
+        // Bei vier Gruppen wird immer der Standard verwendet, die Auswahl bleibt ausgeblendet.
         const gc = ko ? ko.groupCount : groupCount;
-        optRow.style.display = gc === 4 ? '' : 'none';
+        optRow.style.display = gc === 2 ? '' : 'none';
         document.getElementById('pairing-option').value = String(ko ? ko.option : pairingOption);
         renderPairingNote();
 
@@ -1927,7 +1927,12 @@
         statusBox.innerHTML = '<b>KO-Runde läuft.</b> Die Gruppen-Platzierungen sind fixiert. ' +
             'Änderungen in Phase 1 wirken sich nicht mehr auf die Paarungen aus.';
 
-        renderSeedPanel(locked);
+        if (SEED_PANEL_ENABLED) {
+            renderSeedPanel(locked);
+        } else {
+            seedPanel.style.display = 'none';
+            seedPanel.innerHTML = '';
+        }
         renderBracket();
     }
 
@@ -1935,10 +1940,18 @@
     function renderPairingNote() {
         const note = document.getElementById('pairing-option-note');
         if (!note) return;
+        const gc = ko ? ko.groupCount : groupCount;
         const opt = ko ? ko.option : pairingOption;
-        note.textContent = opt === 2
-            ? 'Über Kreuz: G1E gegen G4Z, G2E gegen G3Z, G3E gegen G2Z, G4E gegen G1Z. Die Gruppen werden gleichmäßig auf beide Hälften des Baums verteilt.'
-            : 'Gruppennachbarn: G1E gegen G2Z, G2E gegen G1Z, G3E gegen G4Z, G4E gegen G3Z. Gruppe 1 und 2 liegen dadurch in derselben Hälfte des Baums, Gruppe 3 und 4 in der anderen.';
+        if (gc === 2) {
+            note.textContent = opt === 2
+                ? 'Über Kreuz: G1E gegen G2V, G1Z gegen G2D, G2E gegen G1V, G2Z gegen G1D. '
+                    + 'Gruppe 1 (Erster/Zweiter) und Gruppe 2 (Erster/Zweiter) liegen dadurch je in derselben Hälfte des Baums.'
+                : 'Standard: G1E gegen G2V, G2Z gegen G1D, G2E gegen G1V, G1Z gegen G2D. '
+                    + 'Die Gruppenersten treffen frühestens im Finale aufeinander.';
+        } else {
+            note.textContent = 'Gruppennachbarn: G1E gegen G2Z, G2E gegen G1Z, G3E gegen G4Z, G4E gegen G3Z. '
+                + 'Gruppe 1 und 2 liegen dadurch in derselben Hälfte des Baums, Gruppe 3 und 4 in der anderen.';
+        }
     }
 
     // Setzliste mit acht Startplaetzen und Pfeiltasten
