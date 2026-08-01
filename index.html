@@ -27,12 +27,18 @@
         select { padding: 6px 10px; border-radius: 4px; border: 1px solid #117a65; font-size: 1rem; font-weight: bold; background-color: #fff; cursor: pointer; }
         select.small { padding: 4px 6px; font-size: 0.9rem; }
 
-        .grid-layout { display: flex; gap: 25px; align-items: flex-start; width: 100%; margin-top: 10px; }
+        .grid-layout { display: flex; gap: 0; align-items: flex-start; width: 100%; margin-top: 10px; }
         /* row-Ebene aus dem Layout nehmen, damit die Spalten direkte Flex-Kinder werden */
         .grid-row { display: contents; }
         /* Jede Spalte bekommt eine eigene Maximalhoehe und einen eigenen Scrollbereich (an Fensterhoehe gekoppelt) */
         .grid-col-left { flex: 0 0 360px; max-height: calc(100vh - 200px); overflow-y: auto; padding-right: 10px; }
         .grid-col-right { flex: 1; min-width: 0; max-height: calc(100vh - 200px); overflow-y: auto; }
+        /* Ziehbare Trennlinie zwischen den beiden Spalten; traegt zugleich den Abstand (frueher gap: 25px) */
+        .col-resizer { flex: 0 0 auto; width: 12px; margin: 0 6px; cursor: col-resize; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: #eef2f4; border: 1px solid #e0e6ea; align-self: stretch; }
+        .col-resizer:hover { background: #d7efe9; border-color: #16a085; }
+        .col-resizer.dragging { background: #16a085; border-color: #16a085; }
+        .col-resizer-icon { color: #7f8c8d; font-size: 14px; line-height: 1; pointer-events: none; user-select: none; }
+        .col-resizer:hover .col-resizer-icon, .col-resizer.dragging .col-resizer-icon { color: #fff; }
         .card { background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 20px; margin-bottom: 20px; }
         h2 { color: #2c3e50; font-size: 1.15rem; margin-top: 0; margin-bottom: 15px; border-left: 4px solid #16a085; padding-left: 8px; }
         /* Kopfzeile mit Auf-/Zuklapp-Button fuer die Spielereingabe */
@@ -245,6 +251,22 @@
         .autosave-status.ok { color: #117a65; }
         .autosave-status.warn { color: #c0392b; font-weight: 600; }
 
+        /* --- Restore-Punkte: Banner nach destruktiver Aktion + Ketten-Liste --- */
+        .undo-banner { display: none; align-items: center; justify-content: space-between; gap: 12px;
+            background: #fff3cd; border-left: 4px solid #f39c12; border-radius: 4px; padding: 10px 14px;
+            margin-bottom: 18px; color: #856404; font-size: 0.9rem; }
+        .undo-banner.show { display: flex; }
+        .undo-banner-btn { background-color: #16a085; color: #fff; border: none; padding: 7px 14px;
+            border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.85rem; white-space: nowrap; }
+        .undo-banner-btn:hover { background-color: #117a65; }
+        .restore-heading { margin-top: 16px; padding-top: 14px; border-top: 1px solid #e9ecef; }
+        .restore-item { background: #fff; border: 1px solid #e9ecef; border-left: 3px solid #16a085;
+            border-radius: 4px; padding: 9px 11px; margin-bottom: 8px; }
+        .restore-item .ri-label { font-weight: 600; color: #2c3e50; font-size: 0.9rem; }
+        .restore-item .ri-meta { font-size: 0.78rem; color: #7f8c8d; margin: 2px 0 8px 0; }
+        .restore-empty { font-size: 0.85rem; color: #7f8c8d; font-style: italic; }
+        @media print { .undo-banner { display: none !important; } }
+
         @media print {
             /* Nur den Bericht drucken. Alle uebrigen direkten Body-Elemente komplett
                aus dem Druck-Layout nehmen (display:none statt nur unsichtbar), sonst
@@ -316,6 +338,12 @@
         </div>
     </div>
 
+    <!-- Hinweis nach einer destruktiven Aktion; blendet sich nach einigen Sekunden selbst aus -->
+    <div id="undo-banner" class="undo-banner no-print">
+        <span id="undo-banner-text"></span>
+        <button type="button" id="undo-banner-btn" class="undo-banner-btn">Rückgängig</button>
+    </div>
+
     <div class="grid-layout">
         <div class="grid-row">
             <div class="grid-col-left">
@@ -341,18 +369,10 @@
 
                 <div class="card">
                     <h2>Speichern &amp; Laden</h2>
-                    <div class="save-load-section-label">Im Browser speichern</div>
+                    <div class="save-load-section-label">Datei</div>
                     <div class="save-load-row">
                         <input type="text" id="tournament-name" placeholder="Turniername" maxlength="60">
-                        <button id="btn-save-local" class="save-load-btn" title="Aktuellen Stand unter diesem Namen im Browser speichern">Speichern</button>
                     </div>
-                    <div class="save-load-section-label">Aus Browser laden</div>
-                    <div class="save-load-row">
-                        <select id="saved-list"><option value="">-- gespeichertes Turnier wählen --</option></select>
-                        <button id="btn-load-local" class="save-load-btn secondary" title="Ausgewähltes Turnier laden">Laden</button>
-                        <button id="btn-delete-local" class="save-load-btn danger" title="Ausgewähltes Turnier löschen">Löschen</button>
-                    </div>
-                    <div class="save-load-section-label">Datei</div>
                     <div class="save-load-row">
                         <button id="btn-export-file" class="save-load-btn" title="Turnierstand als JSON-Datei herunterladen">Als Datei exportieren</button>
                         <button id="btn-import-file" class="save-load-btn secondary" title="Turnierstand aus JSON-Datei laden">Aus Datei importieren</button>
@@ -360,9 +380,17 @@
                     </div>
                     <div id="save-load-status" class="save-load-status"></div>
                     <div id="autosave-status" class="autosave-status"></div>
+
+                    <h2 class="restore-heading">Restore-Punkte (letzte 5)<span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body"><b>Automatische Sicherung vor riskanten Aktionen.</b><br>Vor jedem Zurücksetzen, vor dem Ändern der Teilnehmer- oder Gruppenanzahl oder der Race-to-Vorgabe, vor jedem Neu-Auslosen, Ergebnisse-Löschen, KO-Zurücksetzen sowie vor jedem Laden und Importieren wird der aktuelle Stand gesichert. Die letzten fünf Sicherungen stehen hier zum Wiederherstellen bereit und bleiben auch nach dem Schließen der Datei erhalten.</span></span></h2>
+                    <div id="restore-list"></div>
+                    <div class="save-load-row" style="margin-top:8px;">
+                        <button type="button" id="btn-restore-clear" class="save-load-btn secondary" title="Alle Restore-Punkte löschen">Kette leeren</button>
+                    </div>
+                    <div id="restore-persist-status" class="save-load-status"></div>
                 </div>
 
             </div>
+            <div class="col-resizer" id="col-resizer" title="Spaltenbreite ziehen (Doppelklick: zuruecksetzen)"><span class="col-resizer-icon">&#8596;</span></div>
             <div class="grid-col-right">
 
                 <div class="card">
@@ -498,10 +526,12 @@
 
         document.getElementById('player-count').addEventListener('change', (e) => {
             if (confirm("Bist du sicher? Bei Änderung der Teilnehmerzahl werden Auslosung und alle Ergebnisse gelöscht!\n\nDenk an das Speichern des Turnierergebnisses.")) {
+                restorePunktAnlegen('Vor: Teilnehmerzahl ändern');
                 const num = parseInt(e.target.value);
                 groupCount = defaultGroupCount(num);
                 document.getElementById('group-count').value = String(groupCount);
                 initTournament(num);
+                zeigeRestoreBanner('Teilnehmerzahl geändert.');
             } else {
                 e.target.value = playerCount;
             }
@@ -516,8 +546,10 @@
                 e.target.value = groupCount;
                 return;
             }
+            restorePunktAnlegen('Vor: Gruppenanzahl ändern');
             groupCount = neu;
             initTournament(playerCount);
+            zeigeRestoreBanner('Gruppenanzahl geändert.');
         });
 
         document.getElementById('game-type').addEventListener('change', (e) => {
@@ -561,9 +593,6 @@
             printReport();
         });
 
-        document.getElementById('btn-save-local').addEventListener('click', saveToLocalStorage);
-        document.getElementById('btn-load-local').addEventListener('click', loadFromLocalStorage);
-        document.getElementById('btn-delete-local').addEventListener('click', deleteFromLocalStorage);
         document.getElementById('btn-export-file').addEventListener('click', exportToFile);
         document.getElementById('btn-import-file').addEventListener('click', () => document.getElementById('import-file-input').click());
         document.getElementById('import-file-input').addEventListener('change', importFromFile);
@@ -577,7 +606,20 @@
         // In den Satzfeldern sind nur Ziffern erlaubt
         installScoreInputFilter();
 
-        refreshSavedList();
+
+        // Restore-Kette laden und Bedienelemente verdrahten
+        restoreKetteLaden();
+        renderRestoreChain();
+        document.getElementById('restore-list').addEventListener('click', (ev) => {
+            const btn = ev.target.closest('[data-restore-index]');
+            if (btn) restoreWiederherstellen(parseInt(btn.getAttribute('data-restore-index'), 10));
+        });
+        document.getElementById('btn-restore-clear').addEventListener('click', restoreKetteLeeren);
+        document.getElementById('undo-banner-btn').addEventListener('click', () => restoreWiederherstellen(0));
+        const undoBanner = document.getElementById('undo-banner');
+        // Solange die Maus ueber dem Banner ist, laeuft der Ausblend-Timer nicht
+        undoBanner.addEventListener('mouseenter', () => clearTimeout(restoreBannerTimer));
+        undoBanner.addEventListener('mouseleave', () => { if (undoBanner.classList.contains('show')) starteRestoreBannerTimer(); });
 
         // Automatisch gesicherten Stand wiederherstellen, sonst leeres Turnier aufbauen
         if (!restoreAutosave()) {
@@ -619,9 +661,12 @@
                 e.target.value = alt;
                 return;
             }
+            const hatteErgebnisse = hasAnyScore();
+            if (hatteErgebnisse) restorePunktAnlegen('Vor: Race-to ändern');
             setter(neu);
             normalizeAllScores();
             renderAll();
+            if (hatteErgebnisse) zeigeRestoreBanner('Race-to geändert.');
         });
     }
 
@@ -709,6 +754,139 @@
         el.textContent = text;
     }
 
+    // =====================================================================
+    // Restore-Punkte: Wiederherstellungskette vor destruktiven Aktionen
+    // =====================================================================
+    // Vor jeder destruktiven Aktion (Zuruecksetzen, Anzahl/Gruppen/Race-to
+    // aendern, Neu auslosen, Ergebnisse loeschen, KO zuruecksetzen, Setzliste
+    // freigeben, Laden, Import) wird der aktuelle Stand gesichert. Die letzten
+    // fuenf Sicherungen liegen unter einem eigenen localStorage-Schluessel und
+    // ueberstehen das Schliessen des Fensters.
+    const RESTORE_KEY = STORAGE_PREFIX + '__restore__';
+    const MAX_RESTORE = 5;                    // Kettenlaenge: letzte fuenf Punkte
+    const RESTORE_BANNER_TIMEOUT_MS = 6000;   // Banner blendet sich danach selbst aus
+    let restoreChain = [];
+    let restoreBannerTimer = null;
+
+    // Kurze, lesbare Beschreibung eines Standes fuer die Ketten-Anzeige
+    function restoreSummary(snap) {
+        const n = Array.isArray(snap.currentNames) ? snap.currentNames.length : (snap.playerCount || 0);
+        const erg = (snap.scores ? Object.keys(snap.scores).length : 0) + (snap.koScores ? Object.keys(snap.koScores).length : 0);
+        const koAktiv = snap.ko ? ', KO-Runde aktiv' : '';
+        return n + ' Spieler, ' + erg + ' Ergebniswert(e)' + koAktiv;
+    }
+
+    // Aktuellen Stand als Restore-Punkt sichern (vor einer destruktiven Aktion)
+    function restorePunktAnlegen(label) {
+        try {
+            const snap = getCurrentSnapshot();
+            snap.name = getTournamentName();
+            restoreChain.unshift({ label: label, savedAt: snap.savedAt, snapshot: snap, summary: restoreSummary(snap) });
+            if (restoreChain.length > MAX_RESTORE) restoreChain.length = MAX_RESTORE;  // auf letzte fuenf begrenzen
+            restoreKetteSpeichern();
+            renderRestoreChain();
+        } catch (e) {
+            // Snapshot nicht moeglich: Restore-Punkt wird uebersprungen, die Aktion laeuft weiter
+        }
+    }
+
+    // Einen Restore-Punkt wiederherstellen; sichert zuvor den aktuellen Stand.
+    function restoreWiederherstellen(index) {
+        const eintrag = restoreChain[index];
+        if (!eintrag) return;
+        if (!confirm('Diesen Stand wiederherstellen?\n\nDer aktuelle Stand wird zuvor als Restore-Punkt gesichert.')) return;
+        // Ziel festhalten, BEVOR die Kette sich durch das Anlegen verschiebt
+        // (bei voller Kette faellt der gewuenschte Eintrag sonst gerade heraus).
+        const zielSnapshot = eintrag.snapshot;
+        restorePunktAnlegen('Vor Wiederherstellung');
+        try {
+            isRestoring = true;
+            applySnapshot(zielSnapshot);
+            if (typeof zielSnapshot.name === 'string') document.getElementById('tournament-name').value = zielSnapshot.name;
+            isRestoring = false;
+        } catch (e) {
+            isRestoring = false;
+            showStatus('Wiederherstellen fehlgeschlagen: ' + e.message, true);
+            return;
+        }
+        autosaveNow();                 // wiederhergestellten Stand auch automatisch sichern
+        versteckeRestoreBanner();
+        showStatus('Stand wiederhergestellt.');
+    }
+
+    function restoreKetteLeeren() {
+        if (restoreChain.length === 0) return;
+        if (!confirm('Alle Restore-Punkte löschen?')) return;
+        restoreChain = [];
+        restoreKetteSpeichern();
+        renderRestoreChain();
+        versteckeRestoreBanner();
+    }
+
+    function restoreKetteSpeichern() {
+        try { localStorage.setItem(RESTORE_KEY, JSON.stringify(restoreChain)); }
+        catch (e) { /* Speicher gesperrt oder voll: Kette bleibt nur im Arbeitsspeicher */ }
+        setRestorePersistStatus();
+    }
+
+    function restoreKetteLaden() {
+        try {
+            const raw = localStorage.getItem(RESTORE_KEY);
+            if (raw) {
+                const daten = JSON.parse(raw);
+                if (Array.isArray(daten)) restoreChain = daten.slice(0, MAX_RESTORE);
+            }
+        } catch (e) { restoreChain = []; }
+    }
+
+    function renderRestoreChain() {
+        const box = document.getElementById('restore-list');
+        if (!box) return;
+        if (restoreChain.length === 0) {
+            box.innerHTML = '<div class="restore-empty">Noch keine Restore-Punkte vorhanden.</div>';
+            setRestorePersistStatus();
+            return;
+        }
+        box.innerHTML = restoreChain.map(function (eintrag, index) {
+            const zeit = eintrag.savedAt ? formatTimeDE(new Date(eintrag.savedAt)) + ' Uhr' : '';
+            return '<div class="restore-item">' +
+                   '<div class="ri-label">' + restoreEscape(eintrag.label) + '</div>' +
+                   '<div class="ri-meta">' + zeit + ' \u00b7 ' + restoreEscape(eintrag.summary || '') + '</div>' +
+                   '<button type="button" class="save-load-btn" data-restore-index="' + index + '">Wiederherstellen</button>' +
+                   '</div>';
+        }).join('');
+        setRestorePersistStatus();
+    }
+
+    function setRestorePersistStatus() {
+        const el = document.getElementById('restore-persist-status');
+        if (!el) return;
+        el.textContent = restoreChain.length + ' von ' + MAX_RESTORE + ' Restore-Punkten gesichert. Bleiben auch nach dem Schließen der Datei erhalten.';
+    }
+
+    // kleiner HTML-Escaper fuer Label/Zusammenfassung in der Ketten-Anzeige
+    function restoreEscape(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // ---- Banner nach destruktiver Aktion (mit automatischem Ausblenden) ----
+    function zeigeRestoreBanner(text) {
+        const b = document.getElementById('undo-banner');
+        if (!b) return;
+        document.getElementById('undo-banner-text').textContent = text + ' Rückgängig stellt den letzten Restore-Punkt wieder her.';
+        b.classList.add('show');
+        starteRestoreBannerTimer();
+    }
+    function starteRestoreBannerTimer() {
+        clearTimeout(restoreBannerTimer);
+        restoreBannerTimer = setTimeout(versteckeRestoreBanner, RESTORE_BANNER_TIMEOUT_MS);
+    }
+    function versteckeRestoreBanner() {
+        clearTimeout(restoreBannerTimer);
+        const b = document.getElementById('undo-banner');
+        if (b) b.classList.remove('show');
+    }
+
     // Uhrzeit als HH:MM
     function formatTimeDE(d) {
         return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
@@ -723,11 +901,13 @@
             'Denk an das Speichern des Turnierergebnisses (Speichern & Laden oder PDF).\n\n' +
             'Bist du sicher?')) return;
 
+        restorePunktAnlegen('Vor: Turnierplan zurücksetzen');
         clearAutosave();
         document.getElementById('tournament-name').value = '';
         initTournament(playerCount);
         showStatus('Turnierplan zurückgesetzt.');
         setAutosaveStatus('Automatische Sicherung aktiv: Eingaben überstehen das Schließen des Fensters.', '');
+        zeigeRestoreBanner('Turnierplan zurückgesetzt.');
     }
 
     function initTournament(num) {
@@ -919,6 +1099,8 @@
     // ---------------------------------------------------------------------
     function drawGroups() {
         if (isDrawn() && !confirm("Neu auslosen? Alle bisherigen Ergebnisse und die KO-Runde werden gelöscht.")) return;
+        const warNeuauslosung = isDrawn();   // erste Auslosung verwirft nichts -> kein Restore-Punkt
+        if (warNeuauslosung) restorePunktAnlegen('Vor: Neu auslosen');
 
         // Fisher-Yates-Shuffle über alle Startnummern
         const pool = Array.from({ length: playerCount }, (_, i) => i);
@@ -947,6 +1129,7 @@
 
         renderPlayerInputs();
         renderAll();
+        if (warNeuauslosung) zeigeRestoreBanner('Neu ausgelost.');
     }
 
     // Ist bereits ausgelost?
@@ -959,6 +1142,7 @@
     function clearAllScores() {
         if (!isDrawn()) return;
         if (!confirm("Alle Ergebnisse auf 0 zurücksetzen? Die Gruppen bleiben bestehen, die KO-Runde wird zurückgesetzt.")) return;
+        restorePunktAnlegen('Vor: Ergebnisse auf 0');
         scores = {};
         koScores = {};
         manualOrder = {};
@@ -967,6 +1151,7 @@
         tournamentStart = null;
         initScoresToZero();
         renderAll();
+        zeigeRestoreBanner('Ergebnisse auf 0 gesetzt.');
     }
 
     // Rundenturnier nach dem Kreisverfahren, -1 steht für spielfrei
@@ -1051,7 +1236,7 @@
                     </div>
                     <div id="shootout-info-${grp}" class="hint-box" style="display:none;"></div>
                     <table class="table-style">
-                        <thead><tr><th>Platz</th><th>Name</th><th>Punkte</th><th>Satz-Diff.</th></tr></thead>
+                        <thead><tr><th>Platz</th><th>Name</th><th>Pkt.</th><th>Sum.</th><th>Satz-Diff.</th></tr></thead>
                         <tbody id="ranking-body-${grp}"></tbody>
                     </table>
                     <table class="table-style">
@@ -1518,7 +1703,7 @@
         if (!tbody || !hintDiv) return;
 
         if (!groups[grp] || groups[grp].length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="color:#7f8c8d;">Noch keine Auslosung.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="color:#7f8c8d;">Noch keine Auslosung.</td></tr>';
             hintDiv.style.display = 'none';
             return;
         }
@@ -1547,6 +1732,7 @@
                     <td><span class='rank-badge'>${i + 1}</span></td>
                     <td style="text-align:left; font-weight:600;"><span data-pname="${p.idx}">${esc(p.name)}</span>${qualMark}${marker}</td>
                     <td style="color:#27ae60; font-weight:bold;">${p.pts}</td>
+                    <td>${p.won}:${p.lost}</td>
                     <td>${p.diff > 0 ? '+' + p.diff : p.diff}</td>
                 </tr>`;
         }).join('');
@@ -1793,6 +1979,7 @@
 
     function resetKO() {
         if (!confirm("KO-Runde zurücksetzen? Setzliste und alle KO-Ergebnisse gehen verloren, die Gruppenphase bleibt erhalten.")) return;
+        restorePunktAnlegen('Vor: KO-Runde zurücksetzen');
         ko = null;
         koScores = {};
         renderGroupCells();
@@ -1800,6 +1987,7 @@
         renderKO();
         renderFinalTable();
         scheduleAutosave();
+        zeigeRestoreBanner('KO-Runde zurückgesetzt.');
     }
 
     // Setzliste wieder freigeben. Alle KO-Ergebnisse werden verworfen, weil sonst
@@ -1807,6 +1995,7 @@
     function unlockSeeds() {
         if (!ko) return;
         if (!confirm("Setzliste freigeben?\n\nAlle eingetragenen KO-Ergebnisse werden auf 0:0 zurückgesetzt. Die Setzliste selbst bleibt erhalten und kann anschließend geändert werden.")) return;
+        restorePunktAnlegen('Vor: Setzliste freigeben');
         koScores = {};
         KO_MATCHES.forEach(m => {
             koScores[kKey(m.id, 1)] = 0;
@@ -1815,6 +2004,7 @@
         renderKO();
         renderFinalTable();
         scheduleAutosave();
+        zeigeRestoreBanner('Setzliste freigegeben.');
     }
 
     // Spieler in der Setzliste um eine Position verschieben (Tausch mit dem Nachbarn)
@@ -2307,72 +2497,6 @@
         return document.getElementById('tournament-name').value.trim();
     }
 
-    function saveToLocalStorage() {
-        const name = getTournamentName();
-        if (!name) {
-            showStatus('Bitte zuerst einen Turniernamen eingeben.', true);
-            return;
-        }
-        const key = STORAGE_PREFIX + name;
-        if (localStorage.getItem(key) !== null) {
-            if (!confirm(`Turnier "${name}" existiert bereits. Überschreiben?`)) return;
-        }
-        try {
-            const data = getCurrentSnapshot();
-            data.name = name;
-            localStorage.setItem(key, JSON.stringify(data));
-            refreshSavedList(name);
-            showStatus(`Gespeichert: "${name}"`);
-        } catch (e) {
-            showStatus('Fehler beim Speichern: ' + e.message, true);
-        }
-    }
-
-    function loadFromLocalStorage() {
-        const sel = document.getElementById('saved-list');
-        const name = sel.value;
-        if (!name) {
-            showStatus('Bitte ein gespeichertes Turnier auswählen.', true);
-            return;
-        }
-        if (!confirm(`Turnier "${name}" laden? Der aktuelle Stand wird ersetzt.`)) return;
-        try {
-            const raw = localStorage.getItem(STORAGE_PREFIX + name);
-            if (!raw) throw new Error('Nicht gefunden');
-            applySnapshot(JSON.parse(raw));
-            document.getElementById('tournament-name').value = name;
-            showStatus(`Geladen: "${name}"`);
-        } catch (e) {
-            showStatus('Fehler beim Laden: ' + e.message, true);
-        }
-    }
-
-    function deleteFromLocalStorage() {
-        const sel = document.getElementById('saved-list');
-        const name = sel.value;
-        if (!name) {
-            showStatus('Bitte ein gespeichertes Turnier auswählen.', true);
-            return;
-        }
-        if (!confirm(`Turnier "${name}" endgültig löschen?`)) return;
-        localStorage.removeItem(STORAGE_PREFIX + name);
-        refreshSavedList();
-        showStatus(`Gelöscht: "${name}"`);
-    }
-
-    function refreshSavedList(selectName) {
-        const sel = document.getElementById('saved-list');
-        const names = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (k && k.indexOf(STORAGE_PREFIX) === 0 && k !== AUTOSAVE_KEY) names.push(k.substring(STORAGE_PREFIX.length));
-        }
-        names.sort((a, b) => a.localeCompare(b, 'de'));
-        sel.innerHTML = '<option value="">-- gespeichertes Turnier wählen --</option>' +
-            names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
-        if (selectName && names.indexOf(selectName) !== -1) sel.value = selectName;
-    }
-
     function exportToFile() {
         try {
             const name = getTournamentName() || 'billard-turnier-ko';
@@ -2400,6 +2524,7 @@
         evt.target.value = '';
         if (!file) return;
         if (!confirm(`Datei "${file.name}" importieren? Der aktuelle Stand wird ersetzt.`)) return;
+        restorePunktAnlegen('Vor: Datei importieren');
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
@@ -2407,6 +2532,7 @@
                 applySnapshot(snap);
                 if (snap.name) document.getElementById('tournament-name').value = snap.name;
                 showStatus(`Importiert: "${file.name}"`);
+                zeigeRestoreBanner(`Datei "${file.name}" importiert.`);
             } catch (err) {
                 showStatus('Fehler beim Import: ' + err.message, true);
             }
@@ -2557,13 +2683,14 @@
             const stats = res.stats;
             html += `<h2>Gruppe ${grp} - Abschlusstabelle</h2>
                 <table class="table-style">
-                    <thead><tr><th>Platz</th><th>Name</th><th>Punkte</th><th>Satz-Diff.</th></tr></thead>
+                    <thead><tr><th>Platz</th><th>Name</th><th>Pkt.</th><th>Sum.</th><th>Satz-Diff.</th></tr></thead>
                     <tbody>` +
                 stats.map((p, i) => `
                     <tr>
                         <td>${i + 1}</td>
                         <td style="text-align:left;">${esc(p.name)}</td>
                         <td>${p.pts}</td>
+                        <td>${p.won}:${p.lost}</td>
                         <td>${p.diff > 0 ? '+' + p.diff : p.diff}</td>
                     </tr>`).join('') +
                 `</tbody></table>`;
@@ -2685,6 +2812,45 @@
         }
     })();
 
+</script>
+<script>
+/* Ziehbare Trennlinie zwischen linker und rechter Spalte. Keine Speicherung: nach Neuladen wieder Standardbreite. */
+(function () {
+    const layout = document.querySelector('.grid-layout');
+    const leftCol = document.querySelector('.grid-col-left');
+    const resizer = document.getElementById('col-resizer');
+    if (!layout || !leftCol || !resizer) return;
+    const DEFAULT_WIDTH = 360;   // Standardbreite der linken Spalte
+    const MIN_LEFT = 260;        // linke Spalte nicht schmaler ziehbar
+    const MIN_RIGHT = 320;       // rechte Spalte behaelt Mindestbreite
+    let dragging = false;
+    resizer.addEventListener('pointerdown', function (e) {
+        dragging = true;
+        resizer.classList.add('dragging');
+        resizer.setPointerCapture(e.pointerId);
+        e.preventDefault();
+    });
+    resizer.addEventListener('pointermove', function (e) {
+        if (!dragging) return;
+        const rect = layout.getBoundingClientRect();
+        let w = e.clientX - rect.left;                 // Breite links = Mausposition ab Layout-Anfang
+        const maxLeft = rect.width - MIN_RIGHT;
+        if (w < MIN_LEFT) w = MIN_LEFT;
+        if (w > maxLeft) w = maxLeft;
+        leftCol.style.flexBasis = Math.round(w) + 'px';
+    });
+    function endDrag() {
+        if (!dragging) return;
+        dragging = false;
+        resizer.classList.remove('dragging');
+    }
+    resizer.addEventListener('pointerup', endDrag);
+    resizer.addEventListener('pointercancel', endDrag);
+    /* Doppelklick setzt die Spaltenbreite auf den Standard zurueck */
+    resizer.addEventListener('dblclick', function () {
+        leftCol.style.flexBasis = DEFAULT_WIDTH + 'px';
+    });
+})();
 </script>
 </body>
 </html>
