@@ -20,6 +20,8 @@
         .title-group { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
         .btn-reset-all { background-color: #c0392b; color: #fff; border: none; padding: 7px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.85rem; white-space: nowrap; }
         .btn-reset-all:hover { background-color: #922b21; }
+        .btn-add-player { background-color: #117a65; color: #fff; border: none; padding: 7px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.85rem; white-space: nowrap; }
+        .btn-add-player:hover { background-color: #0e6252; }
 
         .settings-box { background-color: #e8f8f5; padding: 10px 20px; border-radius: 6px; border: 1px solid #a3e4d7; display: flex; align-items: center; gap: 10px; font-weight: bold; color: #117a65; flex-wrap: wrap; }
         .settings-box .sep { width: 1px; align-self: stretch; background-color: #a3e4d7; margin: 0 4px; }
@@ -187,12 +189,16 @@
         /* Rundentabellen der KO-Phase */
         .ko-round-title { background-color: #2c3e50; color: #fff; padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 0.92rem; margin: 16px 0 8px 0; display: flex; justify-content: space-between; align-items: center; }
         .ko-round-title .meta { font-weight: normal; font-size: 0.8rem; opacity: 0.85; }
+        /* Badge, wenn eine Runde durch Ergebnisse der Folgerunde gesperrt ist */
+        .lock-badge { display: inline-block; background-color: #16a085; color: #fff; font-weight: normal; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; margin-left: 8px; vertical-align: middle; }
         .ko-pending { color: #7f8c8d; font-style: italic; font-weight: normal; }
         .ko-winner { color: #117a65; font-weight: bold; }
 
         #print-report { display: none; }
         #print-report h1 { font-size: 1.4rem; margin-bottom: 4px; }
         #print-report h2 { font-size: 1.1rem; margin-top: 18px; }
+        /* Seitenumbruch: markierter Abschnitt beginnt im PDF auf einer neuen Seite */
+        #print-report h2.seite-neu { page-break-before: always; break-before: page; }
         #print-report p.sub { color: #555; margin-top: 0; margin-bottom: 16px; }
 
         /* Fussnote am Berichtsende: Vermerk zu wiederholter Auslosung und
@@ -243,8 +249,6 @@
         .save-load-btn.danger { background-color: #c0392b; }
         .save-load-btn.danger:hover { background-color: #922b21; }
         .save-load-status { font-size: 0.8rem; color: #7f8c8d; margin-top: 4px; min-height: 1em; }
-        .save-load-section-label { font-size: 0.85rem; font-weight: 600; color: #495057; margin: 10px 0 4px 0; }
-        .save-load-section-label:first-child { margin-top: 0; }
 
         /* Dauerhafte Anzeige zur automatischen Sicherung */
         .autosave-status { font-size: 0.78rem; color: #7f8c8d; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e9ecef; line-height: 1.4; }
@@ -309,6 +313,7 @@
     <div class="header-bar">
         <div class="title-group">
             <h1><img class="logo" alt="Pool-Billard-Club Bassum e.V." src="data:image/png;base64,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">Billard Turnierplan - Gruppen mit KO-Runde</h1>
+            <button id="btn-add-player" class="btn-add-player no-print" style="display:none;" title="Nachzügler in eine Gruppe mit Freilos aufnehmen: eingetragene Ergebnisse bleiben erhalten">Spieler nachtragen</button>
             <button id="btn-reset-all" class="btn-reset-all no-print" title="Neues Turnier starten: alle Eingaben werden gelöscht">Turnierplan zurücksetzen</button>
         </div>
         <div class="settings-box">
@@ -369,7 +374,6 @@
 
                 <div class="card">
                     <h2>Speichern &amp; Laden</h2>
-                    <div class="save-load-section-label">Datei</div>
                     <div class="save-load-row">
                         <input type="text" id="tournament-name" placeholder="Turniername" maxlength="60">
                     </div>
@@ -599,6 +603,8 @@
 
         // Kompletter Neustart nur ueber diesen Button und nur nach Bestaetigung
         document.getElementById('btn-reset-all').addEventListener('click', resetTournament);
+        // Nachzuegler aufnehmen, solange es ein Freilos gibt
+        document.getElementById('btn-add-player').addEventListener('click', addLatePlayer);
         // Turniername gehoert mit zum Stand
         document.getElementById('tournament-name').addEventListener('input', scheduleAutosave);
         // Beim Schliessen oder Neuladen des Fensters sofort sichern
@@ -1202,6 +1208,160 @@
     }
 
     // ---------------------------------------------------------------------
+    // Nachzuegler aufnehmen (nur solange es in einer Gruppe ein Freilos gibt)
+    // ---------------------------------------------------------------------
+    // Ein Freilos entsteht, wenn eine Gruppe ungerade besetzt ist. Der Nachzuegler
+    // fuellt einen solchen Freilos-Platz: Er wird der Zielgruppe zugeordnet, deren
+    // Spielplan komplett neu aufgebaut wird. Die bisherigen Freilose dieser Gruppe
+    // werden dabei zu Partien gegen den Nachzuegler. Bereits eingetragene Ergebnisse
+    // bleiben erhalten, koennen sich aber auf andere Runden verteilen. Nach dem Start
+    // der KO-Runde ist das Nachtragen gesperrt.
+
+    // Gruppe hat ein Freilos, wenn ihr Plan mindestens eine spielfreie Paarung enthaelt
+    function groupHasBye(grp) {
+        return (groupRounds[grp] || []).some(round => round.pairs.some(p => p[1] === -1));
+    }
+
+    // Alle aktiven Gruppen mit Freilos
+    function groupsWithBye() {
+        return activeGroups().filter(groupHasBye);
+    }
+
+    // Button einblenden, solange das Nachtragen ueberhaupt moeglich ist: ausgelost,
+    // KO noch nicht gestartet, Teilnehmerobergrenze nicht erreicht, Freilos vorhanden.
+    function updateAddPlayerButton() {
+        const btn = document.getElementById('btn-add-player');
+        if (!btn) return;
+        const moeglich = isDrawn() && ko === null && playerCount < MAX_PLAYERS && groupsWithBye().length > 0;
+        btn.style.display = moeglich ? '' : 'none';
+    }
+
+    // Ergebnisse einer Gruppe nach Spielerpaaren ablegen. Schluessel ist immer
+    // "kleinerer:groesserer Index", dadurch unabhaengig von der Position im Plan.
+    function collectGroupScoresByPair(grp) {
+        const map = {};
+        (groupRounds[grp] || []).forEach((round, rIdx) => {
+            round.pairs.forEach((pair, gIdx) => {
+                if (pair[1] === -1) return;
+                const a = pair[0], b = pair[1];
+                const sA = scores[gKey(grp, rIdx, gIdx, 1)];
+                const sB = scores[gKey(grp, rIdx, gIdx, 2)];
+                map[a < b ? `${a}:${b}` : `${b}:${a}`] = a < b ? [sA, sB] : [sB, sA];
+            });
+        });
+        return map;
+    }
+
+    // Ergebnisse nach dem Neuaufbau des Gruppenplans wieder einsetzen. Paarungen
+    // ohne gespeichertes Ergebnis (alle neuen Partien gegen den Nachzuegler)
+    // starten mit 0:0.
+    function rebuildGroupScoresFromPairs(grp, map) {
+        Object.keys(scores).forEach(k => { if (k.indexOf(grp + '-') === 0) delete scores[k]; });
+        (groupRounds[grp] || []).forEach((round, rIdx) => {
+            round.pairs.forEach((pair, gIdx) => {
+                if (pair[1] === -1) return;
+                const a = pair[0], b = pair[1];
+                const k1 = gKey(grp, rIdx, gIdx, 1);
+                const k2 = gKey(grp, rIdx, gIdx, 2);
+                const alt = map[a < b ? `${a}:${b}` : `${b}:${a}`];
+                if (!alt) { scores[k1] = 0; scores[k2] = 0; return; }
+                scores[k1] = (a < b ? alt[0] : alt[1]) ?? null;
+                scores[k2] = (a < b ? alt[1] : alt[0]) ?? null;
+            });
+        });
+    }
+
+    // Manuelle Stichkampf-Reihenfolgen einer Gruppe verwerfen. Die Schluessel
+    // bestehen aus den sortierten Startnummern einer Gleichstandsgruppe und liegen
+    // damit immer vollstaendig innerhalb einer Gruppe.
+    function clearManualOrderForGroup(grp) {
+        const members = groups[grp] || [];
+        Object.keys(manualOrder).forEach(key => {
+            const idxs = key.split('-').map(Number);
+            if (idxs.every(i => members.indexOf(i) !== -1)) delete manualOrder[key];
+        });
+    }
+
+    function addLatePlayer() {
+        if (!isDrawn()) return;
+        if (ko !== null) {
+            alert('Nachtragen ist nach dem Start der KO-Runde nicht mehr möglich.\n\nZum Nachtragen zuerst die KO-Runde zurücksetzen.');
+            return;
+        }
+        if (playerCount >= MAX_PLAYERS) {
+            alert(`Mehr als ${MAX_PLAYERS} Teilnehmer sind nicht vorgesehen.`);
+            return;
+        }
+        const byeGroups = groupsWithBye();
+        if (byeGroups.length === 0) {
+            alert('Nachtragen ist nur möglich, solange es in mindestens einer Gruppe ein Freilos gibt.');
+            return;
+        }
+
+        // Zielgruppe: bei genau einem Freilos automatisch, sonst abfragen
+        let ziel;
+        if (byeGroups.length === 1) {
+            ziel = byeGroups[0];
+        } else {
+            const eingabe = prompt(
+                `In welche Gruppe soll der Nachzügler aufgenommen werden?\nFreilos vorhanden in: ${byeGroups.join(', ')}`,
+                byeGroups[0]);
+            if (eingabe === null) return;
+            ziel = eingabe.trim().toUpperCase();
+            if (byeGroups.indexOf(ziel) === -1) {
+                alert(`Gruppe "${ziel || '(leer)'}" hat kein Freilos.\nBitte eine dieser Gruppen wählen: ${byeGroups.join(', ')}.`);
+                return;
+            }
+        }
+
+        const neueNummer = playerCount + 1;   // Anzeige (1-basiert)
+        const neuerIndex = playerCount;       // globaler Index (0-basiert)
+        const vorschlag = DEFAULT_NAMES[neuerIndex] || `Spieler ${neueNummer}`;
+        const eingabeName = prompt(`Name des Nachzüglers (Startnummer ${neueNummer}) für Gruppe ${ziel}:`, vorschlag);
+        if (eingabeName === null) return;
+        const name = eingabeName.trim() || vorschlag;
+
+        // Gruppengroessen nach dem Nachtragen bestimmen, um bei Ungleichheit zu warnen
+        const nachher = activeGroups().map(g => (groups[g] || []).length + (g === ziel ? 1 : 0));
+        const unwucht = (Math.max.apply(null, nachher) - Math.min.apply(null, nachher)) > 1;
+
+        let hinweis =
+            `${name} als Spieler ${neueNummer} in Gruppe ${ziel} nachtragen?\n\n` +
+            `Der Spielplan der Gruppe ${ziel} wird komplett neu aufgebaut. ` +
+            `Die bisherigen Freilose dieser Gruppe werden zu Partien gegen ${name}. ` +
+            `Bereits eingetragene Ergebnisse bleiben erhalten, die Partien können sich ` +
+            `aber auf andere Runden verteilen.`;
+        if (unwucht) {
+            hinweis += `\n\nWarnung: Die Gruppen sind danach unterschiedlich groß ` +
+                `(${activeGroups().map((g, i) => g + ': ' + nachher[i]).join(',  ')}).`;
+        }
+        hinweis += `\n\nManuelle Stichkampf-Entscheidungen der Gruppe ${ziel} werden zurückgesetzt.`;
+
+        if (!confirm(hinweis)) return;
+
+        restorePunktAnlegen('Vor: Spieler nachtragen');
+
+        // Ergebnisse der Zielgruppe sichern, Spieler anlegen, Plan neu aufbauen
+        const alteErgebnisse = collectGroupScoresByPair(ziel);
+        currentNames.push(name);
+        playerCount = neueNummer;
+        groups[ziel].push(neuerIndex);
+        groupRounds[ziel] = generateRoundRobin(groups[ziel]);
+        rebuildGroupScoresFromPairs(ziel, alteErgebnisse);
+        clearManualOrderForGroup(ziel);
+        tieGroups[ziel] = [];
+
+        // Teilnehmerauswahl nachziehen, ohne deren change-Ereignis auszuloesen
+        document.getElementById('player-count').value = String(playerCount);
+        groupGridSig = '';   // Gruppenraster und Spielerliste neu aufbauen erzwingen
+        groupCellsSig = '';
+
+        renderPlayerInputs();
+        renderAll();
+        zeigeRestoreBanner(`${name} wurde in Gruppe ${ziel} nachgetragen.`);
+    }
+
+    // ---------------------------------------------------------------------
     // Rendering
     // ---------------------------------------------------------------------
     function renderAll() {
@@ -1215,6 +1375,7 @@
         renderKO();
         renderFinalTable();
         applyHighlights();
+        updateAddPlayerButton();
         scheduleAutosave();
     }
 
@@ -1974,6 +2135,7 @@
         renderKO();
         renderFinalTable();
         applyHighlights();
+        updateAddPlayerButton();
         scheduleAutosave();
     }
 
@@ -1986,6 +2148,7 @@
         activeGroups().forEach(renderGroupRanking);
         renderKO();
         renderFinalTable();
+        updateAddPlayerButton();
         scheduleAutosave();
         zeigeRestoreBanner('KO-Runde zurückgesetzt.');
     }
@@ -2183,24 +2346,38 @@
         }
     }
 
+    // Prüft, ob in einer KO-Runde bereits mindestens ein Satzergebnis > 0 steht.
+    // Grundlage für die Sperre der jeweils davor liegenden Runde.
+    function koRoundHasScore(ids) {
+        return ids.some(id => {
+            const a = koScores[kKey(id, 1)];
+            const b = koScores[kKey(id, 2)];
+            return (typeof a === 'number' && a > 0) || (typeof b === 'number' && b > 0);
+        });
+    }
+
     // Je Runde eine eigene Tabelle
     function renderBracket() {
         const bracket = document.getElementById('ko-bracket');
         const r = resolveKO();
 
+        // "next" = Spiele der Folgerunde. Sobald dort ein Ergebnis > 0 steht,
+        // wird diese Runde gesperrt. Sind alle Folge-Ergebnisse wieder 0, öffnet sie.
         const bloecke = [
-            { titel: 'Runde 1 - Viertelfinale', race: raceQF, ids: ['qf1', 'qf2', 'qf3', 'qf4'] },
-            { titel: 'Runde 2 - Halbfinale', race: raceSF, ids: ['sf1', 'sf2'] },
-            { titel: 'Runde 3 - Finale und Spiel um Platz 3', race: null, ids: ['fin', 'bro'] }
+            { titel: 'Runde 1 - Viertelfinale', race: raceQF, ids: ['qf1', 'qf2', 'qf3', 'qf4'], next: ['sf1', 'sf2'] },
+            { titel: 'Runde 2 - Halbfinale', race: raceSF, ids: ['sf1', 'sf2'], next: ['fin', 'bro'] },
+            { titel: 'Runde 3 - Finale und Spiel um Platz 3', race: null, ids: ['fin', 'bro'], next: [] }
         ];
 
         bracket.innerHTML = bloecke.map(b => {
+            const locked = b.next.length > 0 && koRoundHasScore(b.next);
             const meta = b.race !== null
                 ? `Race to ${b.race}`
                 : `Finale: Race to ${raceFinal} &middot; Platz 3: Race to ${raceSF}`;
-            const zeilen = b.ids.map(id => buildKoRow(r[id])).join('');
+            const zeilen = b.ids.map(id => buildKoRow(r[id], locked)).join('');
+            const badge = locked ? '<span class="lock-badge">gesperrt</span>' : '';
             return `
-                <div class="ko-round-title"><span>${b.titel}</span><span class="meta">${meta}</span></div>
+                <div class="ko-round-title"><span>${b.titel}${badge}</span><span class="meta">${meta}</span></div>
                 <table class="table-style">
                     <thead>
                         <tr>
@@ -2220,10 +2397,12 @@
 
     // Eine Zeile der KO-Tabelle. Solange die Teilnehmer nicht feststehen,
     // wird die Herkunft angezeigt und die Eingabe gesperrt.
-    function buildKoRow(m) {
+    function buildKoRow(m, lockedByNext) {
         const id = m.def.id;
         const k1 = kKey(id, 1), k2 = kKey(id, 2);
-        const dis = m.ready ? '' : ' disabled';
+        // Eingabe gesperrt, solange die Teilnehmer nicht feststehen ODER
+        // die Folgerunde bereits Ergebnisse enthält.
+        const dis = (m.ready && !lockedByNext) ? '' : ' disabled';
         const cls = m.ready ? (m.finished ? '' : 'open-row') : 'bye-row';
 
         const name1 = m.ready
@@ -2289,6 +2468,31 @@
         });
     }
 
+    // Zwei Spieler gelten als gleichrangig, wenn der komplette Wertungs-
+    // schluessel uebereinstimmt: Gruppenplatz, Punkte, Satz-Differenz und
+    // gewonnene Saetze. Die Index-Sortierung (a - b) ist nur ein Tie-Breaker
+    // fuer eine stabile Reihenfolge und begruendet keinen neuen Platz.
+    function samePerfRank(a, b, perf) {
+        const x = perf[a] || { place: 99, pts: 0, diff: 0, won: 0 };
+        const y = perf[b] || { place: 99, pts: 0, diff: 0, won: 0 };
+        return x.place === y.place && x.pts === y.pts && x.diff === y.diff && x.won === y.won;
+    }
+
+    // Vergibt einer nach Gruppenleistung sortierten Liste dichte Plaetze:
+    // Punktgleiche Spieler teilen sich einen Platz, erst bei einer Differenz
+    // wird um 1 hochgezaehlt. showRank markiert die erste Zeile jeder
+    // Platz-Gruppe (nur dort wird die Nummer angezeigt).
+    function denseGroupRows(sortedList, perf, startPlace, how) {
+        const out = [];
+        let place = startPlace;
+        sortedList.forEach((idx, k) => {
+            const isNew = k === 0 || !samePerfRank(sortedList[k - 1], idx, perf);
+            if (k > 0 && isNew) place++;
+            out.push({ place: place, idx: idx, how: how, open: false, showRank: isNew });
+        });
+        return out;
+    }
+
     // Endplatzierung: 1/2 aus dem Finale, 3/4 aus dem Spiel um Platz 3,
     // 5-8 die Viertelfinal-Verlierer nach Gruppenleistung, danach die
     // nicht qualifizierten Spieler.
@@ -2314,24 +2518,26 @@
         paar(r.fin, 'Sieger Finale', 'Finale', 1, 2);
         paar(r.bro, 'Sieger Spiel um Platz 3', 'Spiel um Platz 3', 3, 4);
 
-        // Plätze 5-8: Viertelfinal-Verlierer, nach der Gruppenphase gereiht
+        // Plätze 5-8: Viertelfinal-Verlierer, nach der Gruppenphase gereiht.
+        // Punktgleiche teilen sich einen Platz (dichte Vergabe ab Platz 5).
         const qfIds = ['qf1', 'qf2', 'qf3', 'qf4'];
         const verlierer = qfIds.map(id => r[id].loser).filter(x => x !== null && x !== undefined);
         const offeneQF = qfIds.filter(id => !r[id].finished).length;
-        sortByGroupPerformance(verlierer, perf).forEach((idx, k) => {
-            rows.push({ place: 5 + k, idx: idx, how: 'Viertelfinale (Gruppenwertung)', open: false });
-        });
+        const denseVerlierer = denseGroupRows(sortByGroupPerformance(verlierer, perf), perf, 5, 'Viertelfinale (Gruppenwertung)');
+        denseVerlierer.forEach(row => rows.push(row));
+        // Offene QF-Platzhalter zaehlen fortlaufend hinter dem letzten bekannten Platz.
+        let nextQF = denseVerlierer.length ? denseVerlierer[denseVerlierer.length - 1].place + 1 : 5;
         for (let k = 0; k < offeneQF; k++) {
-            rows.push({ place: 5 + verlierer.length + k, idx: null, how: 'Viertelfinale offen', open: true });
+            rows.push({ place: nextQF + k, idx: null, how: 'Viertelfinale offen', open: true, showRank: true });
         }
 
-        // Ab Platz 9: alle nicht qualifizierten Spieler nach Gruppenleistung
+        // Ab Platz 9: alle nicht qualifizierten Spieler nach Gruppenleistung.
+        // Anker bleibt strukturell bei 9, da immer genau 8 KO-Teilnehmer die
+        // Plaetze 1-8 belegen. Punktgleiche teilen sich einen Platz.
         const imKO = new Set(ko.seeds);
         const rest = [];
         activeGroups().forEach(grp => (groups[grp] || []).forEach(idx => { if (!imKO.has(idx)) rest.push(idx); }));
-        sortByGroupPerformance(rest, perf).forEach((idx, k) => {
-            rows.push({ place: 9 + k, idx: idx, how: 'Gruppenphase', open: false });
-        });
+        denseGroupRows(sortByGroupPerformance(rest, perf), perf, 9, 'Gruppenphase').forEach(row => rows.push(row));
 
         return rows.map(row => Object.assign(row, {
             grp: row.idx !== null && row.idx !== undefined ? (perf[row.idx] ? perf[row.idx].grp : groupOf(row.idx)) : null,
@@ -2361,10 +2567,12 @@
             : '<b>Endstand.</b> Alle KO-Spiele sind entschieden.';
 
         tbody.innerHTML = rows.map(r => {
+            // Bei geteilten Plaetzen zeigt nur die erste Zeile die Nummer.
+            const rankCell = r.showRank === false ? '' : `<span class='rank-badge'>${r.place}</span>`;
             if (r.idx === null || r.idx === undefined) {
                 return `
                     <tr class="bye-row">
-                        <td><span class='rank-badge'>${r.place}</span></td>
+                        <td>${rankCell}</td>
                         <td style="text-align:left;">noch nicht ermittelt</td>
                         <td>-</td>
                         <td>-</td>
@@ -2374,7 +2582,7 @@
             const openMark = r.open ? ' <span class="open-marker" title="Spiel noch offen">offen</span>' : '';
             return `
                 <tr class="${r.open ? 'open-row' : ''}">
-                    <td><span class='rank-badge'>${r.place}</span></td>
+                    <td>${rankCell}</td>
                     <td style="text-align:left; font-weight:600;"><span data-pname="${r.idx}">${esc(currentNames[r.idx])}</span>${openMark}</td>
                     <td><span class="gbadge ${r.grp ? r.grp.toLowerCase() : 'none'}">${r.grp || '-'}</span></td>
                     <td>${r.groupPlace || '-'}</td>
@@ -2592,7 +2800,9 @@
     // Druckvorgangs auf "Turnierergebnis vom TT.MM.JJJJ" gesetzt und danach zurueckgesetzt.
     function printReport() {
         const originalTitle = document.title;
-        document.title = `Turnierergebnis vom ${formatDateDE(new Date())}`;
+        // Disziplin und Teilnehmerzahl an den vom Druck-Dialog vorgeschlagenen Dateinamen anhaengen
+        const pdfDisziplin = document.getElementById('game-type').value;
+        document.title = `Turnierergebnis vom ${formatDateDE(new Date())} ${pdfDisziplin} ${playerCount} Teilnehmer`;
 
         const restore = () => {
             document.title = originalTitle;
@@ -2632,7 +2842,7 @@
                     <tbody>` +
                 rows.map(r => `
                     <tr>
-                        <td>${r.place}</td>
+                        <td>${r.showRank === false ? '' : r.place}</td>
                         <td style="text-align:left;">${(r.idx === null || r.idx === undefined) ? 'noch nicht ermittelt' : esc(currentNames[r.idx])}</td>
                         <td>${r.grp || '-'}</td>
                         <td>${r.groupPlace || '-'}</td>
@@ -2643,7 +2853,7 @@
             // KO-Baum als Rundentabellen
             const r = resolveKO();
             const labels = seedSlotLabels(ko.groupCount);
-            html += `<h2>KO-Runde</h2>
+            html += `<h2 class="seite-neu">KO-Runde</h2>
                 <table class="table-style">
                     <thead><tr><th>Spiel</th><th>Spieler 1</th><th>Ergebnis</th><th>Spieler 2</th><th>Sieger</th></tr></thead>
                     <tbody>` +
