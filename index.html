@@ -290,14 +290,18 @@
             border: 1.5px solid #16a085; color: #16a085;
             font-size: 12px; font-weight: bold; line-height: 1;
             cursor: help; user-select: none; background: #fff;
-            vertical-align: middle; margin-left: 6px;
+            /* Icon haengt erhoeht (oben rechts) am letzten Wort */
+            margin-left: 3px; position: relative; top: -0.5em;
         }
         .help-icon:hover, .help-icon:focus { background: #16a085; color: #fff; outline: none; }
+        /* Haelt letztes Wort + Icon zusammen, damit das Icon nie allein in die naechste Zeile umbricht */
+        .help-glue { white-space: nowrap; }
         /* Tooltip-Text: versteckt, wird per JS als fixed positioniert und ist damit
            unabhaengig vom Scrollbereich der Spalte (wird nicht abgeschnitten) */
         .help-body {
             display: none; position: fixed; z-index: 9999;
             max-width: 300px; background: #2c3e50; color: #fff;
+            white-space: normal; /* setzt geerbtes nowrap des help-glue-Wrappers zurueck */
             font-size: 0.82rem; font-weight: normal; line-height: 1.45;
             padding: 10px 12px; border-radius: 6px;
             box-shadow: 0 4px 14px rgba(0,0,0,0.25);
@@ -355,7 +359,7 @@
 
                 <div class="card">
                     <div class="player-header">
-                        <h2>1. Spieler benennen <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Gruppe über das Auswahlfeld ändern. Der Wechsel erfolgt immer als Tausch mit einem Spieler der Zielgruppe, die Gruppenstärken bleiben dadurch gleich. Nach dem ersten eingetragenen Ergebnis ist die Zuordnung gesperrt.</span></span></h2>
+                        <h2>1. Spieler <span class="help-glue">benennen<span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Gruppe über das Auswahlfeld ändern. Der Wechsel erfolgt immer als Tausch mit einem Spieler der Zielgruppe, die Gruppenstärken bleiben dadurch gleich. Nach dem ersten eingetragenen Ergebnis ist die Zuordnung gesperrt.</span></span></span></h2>
                         <button type="button" id="btn-toggle-players" class="toggle-players-btn no-print" aria-expanded="true">Schließen</button>
                     </div>
                     <div id="player-inputs-container"></div>
@@ -364,7 +368,7 @@
                 </div>
 
                 <div class="card">
-                    <h2>2. Gruppen auslosen <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Die Teilnehmer werden reihum und zufällig auf die Gruppen verteilt. Bei 2 Gruppen kommen die ersten 4 jeder Gruppe weiter, bei 4 Gruppen die ersten 2 - das KO-Feld umfasst dadurch immer 8 Spieler. Die Zuordnung lässt sich anschließend oben über das Auswahlfeld hinter dem Spielernamen von Hand tauschen, solange noch kein Ergebnis eingetragen ist.</span></span></h2>
+                    <h2>2. Gruppen <span class="help-glue">auslosen<span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Die Teilnehmer werden reihum und zufällig auf die Gruppen verteilt. Bei 2 Gruppen kommen die ersten 4 jeder Gruppe weiter, bei 4 Gruppen die ersten 2 - das KO-Feld umfasst dadurch immer 8 Spieler. Die Zuordnung lässt sich anschließend oben über das Auswahlfeld hinter dem Spielernamen von Hand tauschen, solange noch kein Ergebnis eingetragen ist.</span></span></span></h2>
                     <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
                         <button id="btn-draw" class="btn btn-primary">Gruppen auslosen</button>
                         <button id="btn-clear-scores" class="btn btn-secondary" title="Alle Ergebnisse auf 0 zurücksetzen, Gruppen bleiben">Ergebnisse zurücksetzen</button>
@@ -378,14 +382,14 @@
                         <input type="text" id="tournament-name" placeholder="Turniername" maxlength="60">
                     </div>
                     <div class="save-load-row">
-                        <button id="btn-export-file" class="save-load-btn" title="Turnierstand als JSON-Datei herunterladen">Als Datei exportieren</button>
-                        <button id="btn-import-file" class="save-load-btn secondary" title="Turnierstand aus JSON-Datei laden">Aus Datei importieren</button>
+                        <button id="btn-export-file" class="save-load-btn" title="Turnierstand als JSON-Datei herunterladen">Exportieren</button>
+                        <button id="btn-import-file" class="save-load-btn secondary" title="Turnierstand aus JSON-Datei laden">Importieren</button>
                         <input type="file" id="import-file-input" accept="application/json,.json" style="display:none;">
                     </div>
                     <div id="save-load-status" class="save-load-status"></div>
                     <div id="autosave-status" class="autosave-status"></div>
 
-                    <h2 class="restore-heading">Restore-Punkte (letzte 5)<span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body"><b>Automatische Sicherung vor riskanten Aktionen.</b><br>Vor jedem Zurücksetzen, vor dem Ändern der Teilnehmer- oder Gruppenanzahl oder der Race-to-Vorgabe, vor jedem Neu-Auslosen, Ergebnisse-Löschen, KO-Zurücksetzen sowie vor jedem Laden und Importieren wird der aktuelle Stand gesichert. Die letzten fünf Sicherungen stehen hier zum Wiederherstellen bereit und bleiben auch nach dem Schließen der Datei erhalten.</span></span></h2>
+                    <h2 class="restore-heading">Restore-Punkte <span class="help-glue">(letzte 5)<span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body"><b>Automatische Sicherung vor riskanten Aktionen.</b><br>Vor jedem Zurücksetzen, vor dem Ändern der Teilnehmer- oder Gruppenanzahl oder der Race-to-Vorgabe, vor jedem Neu-Auslosen, Ergebnisse-Löschen, KO-Zurücksetzen sowie vor jedem Laden und Importieren wird der aktuelle Stand gesichert. Die letzten fünf Sicherungen stehen hier zum Wiederherstellen bereit und bleiben auch nach dem Schließen der Datei erhalten.</span></span></span></h2>
                     <div id="restore-list"></div>
                     <div class="save-load-row" style="margin-top:8px;">
                         <button type="button" id="btn-restore-clear" class="save-load-btn secondary" title="Alle Restore-Punkte löschen">Kette leeren</button>
@@ -398,12 +402,12 @@
             <div class="grid-col-right">
 
                 <div class="card">
-                    <h2>3. Phase 1 - Gruppenphase <span id="game-type-display" style="font-weight:normal; color:#7f8c8d; font-size:0.9rem;">(8-Ball)</span> <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">In jeder Gruppe spielt jeder gegen jeden. Reihenfolge bei Gleichheit: 1. Punkte (Siege) - 2. Satz-Differenz - 3. Direkter Vergleich (H2H) - 4. Stichkampf (SK, manuell durch Turnierleitung).<br>Ein Spiel gilt erst als beendet, wenn ein Spieler die eingestellte Race-to-Vorgabe an Sätzen erreicht hat. Der Stichkampf (Reihenfolge durch die Turnierleitung festlegen) wird erst angeboten, wenn alle Spiele der jeweiligen Gruppe beendet sind.<br>Tipp: Links Spieler ankreuzen, um deren Spiele im Plan rot hervorzuheben.</span></span></h2>
+                    <h2>3. Phase 1 - Gruppenphase <span class="help-glue"><span id="game-type-display" style="font-weight:normal; color:#7f8c8d; font-size:0.9rem;">(8-Ball)</span><span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">In jeder Gruppe spielt jeder gegen jeden. Reihenfolge bei Gleichheit: 1. Punkte (Siege) - 2. Satz-Differenz - 3. Direkter Vergleich (H2H) - 4. Stichkampf (SK, manuell durch Turnierleitung).<br>Ein Spiel gilt erst als beendet, wenn ein Spieler die eingestellte Race-to-Vorgabe an Sätzen erreicht hat. Der Stichkampf (Reihenfolge durch die Turnierleitung festlegen) wird erst angeboten, wenn alle Spiele der jeweiligen Gruppe beendet sind.<br>Tipp: Links Spieler ankreuzen, um deren Spiele im Plan rot hervorzuheben.</span></span></span></h2>
                     <div class="group-grid" id="group-grid"></div>
                 </div>
 
                 <div class="card">
-                    <h2>4. Phase 2 - KO-Runde <span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Die 8 Qualifikanten ziehen in den KO-Baum ein: Viertelfinale, Halbfinale, Finale und Spiel um Platz 3. Wer verliert, scheidet aus. Mit dem Start werden die Gruppen-Platzierungen fixiert; spätere Korrekturen in Phase 1 ändern die Paarungen nicht mehr.<br>Das Spiel um Platz 3 wird mit der Race-to-Vorgabe des Halbfinals gespielt.</span></span></h2>
+                    <h2>4. Phase 2 - <span class="help-glue">KO-Runde<span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Die 8 Qualifikanten ziehen in den KO-Baum ein: Viertelfinale, Halbfinale, Finale und Spiel um Platz 3. Wer verliert, scheidet aus. Mit dem Start werden die Gruppen-Platzierungen fixiert; spätere Korrekturen in Phase 1 ändern die Paarungen nicht mehr.<br>Das Spiel um Platz 3 wird mit der Race-to-Vorgabe des Halbfinals gespielt.</span></span></span></h2>
                     <div id="ko-status" class="hint-box info"></div>
                     <div id="pairing-option-row" style="margin-bottom:12px; display:none;">
                         <label for="pairing-option" style="font-size:0.85rem; font-weight:600; color:#495057; margin-right:6px;">Paarungsschema Viertelfinale:</label>
@@ -451,9 +455,12 @@
     // ---------------------------------------------------------------------
     // Grunddaten und Zustand
     // ---------------------------------------------------------------------
+    // Neutrale Platzhalternamen (keine geschuetzten Figurennamen)
     const DEFAULT_NAMES = [
-        "Sauron", "Kermit", "Hulk", "Gollum", "Grobi", "Dagobert", "Yoda", "Rambo",
-        "Merlin", "Pumuckl", "Obelix", "Gandalf", "Godzilla", "Batman", "Spock", "Fry",
+        "Spieler 1", "Spieler 2", "Spieler 3", "Spieler 4",
+        "Spieler 5", "Spieler 6", "Spieler 7", "Spieler 8",
+        "Spieler 9", "Spieler 10", "Spieler 11", "Spieler 12",
+        "Spieler 13", "Spieler 14", "Spieler 15", "Spieler 16",
         "Spieler 17", "Spieler 18", "Spieler 19", "Spieler 20",
         "Spieler 21", "Spieler 22", "Spieler 23", "Spieler 24",
         "Spieler 25", "Spieler 26", "Spieler 27", "Spieler 28",
