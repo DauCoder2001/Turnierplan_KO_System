@@ -118,6 +118,17 @@
         .highlighted-match td { border-left-color: #dc3545; border-right-color: #dc3545; }
         .highlighted-match .vs-text { color: #721c24 !important; }
 
+        /* Offene Paarungen: Hervorhebung ueber das Ankreuzfeld in der Statuszeile der KO-Runde.
+           Gelb, damit sie sich von der roten Spielermarkierung unterscheidet. */
+        .open-highlight { background-color: #fff3cd !important; border-top: 2px solid #f0ad4e !important; border-bottom: 2px solid #f0ad4e !important; }
+        .open-highlight td { border-left-color: #f0ad4e; border-right-color: #f0ad4e; }
+        .open-highlight .score-input { border-color: #f0ad4e; }
+
+        /* Statuszeile mit Ankreuzfeld am rechten Rand */
+        .status-row { display: flex; align-items: center; gap: 10px; }
+        .status-row .status-text { flex: 1; }
+        .status-chk { width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; }
+
         .rank-badge { background-color: #e9ecef; color: #495057; font-weight: bold; padding: 3px 8px; border-radius: 12px; }
         /* Medaillenfarben nur in der Endtabelle, nicht in den Gruppentabellen */
         .final-table tbody tr:nth-child(1) .rank-badge { background-color: #f1c40f; color: #fff; }
@@ -523,6 +534,10 @@
     let manualOrder = {};
     let tieGroups = {};                     // Gleichstandsgruppen der zuletzt gerenderten Tabellen
     let highlighted = new Set();
+    // Ankreuzfeld in der Statuszeile von Phase 2: hebt alle noch nicht beendeten
+    // Gruppenspiele gelb hervor. Schliesst sich mit den Spieler-Haken gegenseitig aus
+    // und wird wie diese nicht mitgespeichert.
+    let markOpen = false;
     let raceGroup = 3, raceQF = 3, raceSF = 3, raceFinal = 3;
     let pairingOption = 1;                  // Paarungsschema Viertelfinale (wählbar nur bei 2 Gruppen: 1=Standard, 2=über Kreuz)
     // KO-Runde: null oder { seeds: [8 Startnummern], option, groupCount, ranking: { A: [idx...] } }
@@ -942,6 +957,7 @@
         koScores = {};
         manualOrder = {};
         highlighted.clear();
+        markOpen = false;
         ko = null;
         tournamentStart = null;
         drawCount = 0;
@@ -1456,6 +1472,12 @@
         container.querySelectorAll('.highlight-chk').forEach(chk => chk.addEventListener('change', (e) => {
             const idx = parseInt(e.target.dataset.index);
             e.target.checked ? highlighted.add(idx) : highlighted.delete(idx);
+            // Spieler-Haken und Ankreuzfeld in Phase 2 schliessen sich gegenseitig aus
+            if (highlighted.size > 0 && markOpen) {
+                markOpen = false;
+                const c = document.getElementById('chk-mark-open');
+                if (c) c.checked = false;
+            }
             applyHighlights();
         }));
     }
@@ -1689,6 +1711,8 @@
                 } else {
                     const k1 = gKey(grp, rIdx, gIdx, 1);
                     const k2 = gKey(grp, rIdx, gIdx, 2);
+                    // Kennung fuer die Markierung offener Paarungen (Gruppe, Runde, Spiel)
+                    tr.dataset.okey = `${grp}-${rIdx}-${gIdx}`;
                     tr.innerHTML = `
                         <td style="color:#7f8c8d; font-weight:bold;">${matchCounter++}</td>
                         <td class="player-name-cell" style="text-align:right;"><span data-pname="${pair[0]}">${esc(currentNames[pair[0]])}</span></td>
@@ -1713,6 +1737,7 @@
         renderGroupCells();          // sperrt die Gruppenzuordnung ab dem ersten Ergebnis
         activeGroups().forEach(renderGroupRanking);
         if (!ko) renderKO();          // Statushinweis "noch X Spiele offen" aktualisieren
+        applyHighlights();            // gelbe Markierung offener Spiele mitfuehren
         scheduleAutosave();
     }
 
@@ -1734,17 +1759,46 @@
     }
 
     function applyHighlights() {
+        // Ankreuzfeld in Phase 2 gesetzt: nur die noch nicht beendeten Gruppenspiele
+        // gelb hervorheben. Die Spieler-Haken sind in diesem Fall bereits geloescht.
+        if (markOpen) {
+            document.querySelectorAll('.match-row').forEach(tr => {
+                tr.classList.remove('highlighted-match', 'open-highlight');
+                const okey = tr.dataset.okey;
+                if (!okey) return;                  // Freilose und KO-Zeilen bleiben unberuehrt
+                const t = okey.split('-');
+                const s1 = scores[gKey(t[0], t[1], t[2], 1)];
+                const s2 = scores[gKey(t[0], t[1], t[2], 2)];
+                if (!isGameFinished(s1, s2, raceGroup)) tr.classList.add('open-highlight');
+            });
+            return;
+        }
+
         const num = highlighted.size;
         document.querySelectorAll('.match-row').forEach(tr => {
             const p1 = parseInt(tr.dataset.p1);
             const p2 = parseInt(tr.dataset.p2);
-            tr.classList.remove('highlighted-match');
+            tr.classList.remove('highlighted-match', 'open-highlight');
             if (num === 1) {
                 if (highlighted.has(p1) || highlighted.has(p2)) tr.classList.add('highlighted-match');
             } else if (num >= 2) {
                 if (highlighted.has(p1) && highlighted.has(p2)) tr.classList.add('highlighted-match');
             }
         });
+    }
+
+    // Ankreuzfeld in der Statuszeile von Phase 2 setzen oder loeschen.
+    // Beim Setzen werden die Spieler-Haken geloescht, damit sich rote und gelbe
+    // Markierung nicht ueberlagern.
+    function setMarkOpen(on) {
+        markOpen = !!on;
+        if (markOpen && highlighted.size > 0) {
+            highlighted.clear();
+            document.querySelectorAll('.highlight-chk').forEach(c => c.checked = false);
+        }
+        const chk = document.getElementById('chk-mark-open');
+        if (chk) chk.checked = markOpen;
+        applyHighlights();
     }
 
     // ---------------------------------------------------------------------
@@ -2271,15 +2325,26 @@
 
             if (!isDrawn()) {
                 btnStart.disabled = true;
+                markOpen = false;
                 statusBox.className = 'hint-box info';
                 statusBox.textContent = 'Die KO-Runde ist erst nach der Auslosung möglich.';
             } else {
                 const open = countOpenGroupGames();
                 btnStart.disabled = open > 0;
                 if (open > 0) {
+                    // Statuszeile mit Ankreuzfeld: hebt die noch nicht beendeten
+                    // Gruppenspiele im Spielplan gelb hervor.
                     statusBox.className = 'hint-box';
-                    statusBox.textContent = `Noch ${open} Gruppenspiel(e) nicht beendet (Race to ${raceGroup} noch nicht erreicht). Die KO-Runde kann erst danach starten.`;
+                    statusBox.innerHTML =
+                        '<div class="status-row">' +
+                            `<span class="status-text">Noch ${open} Gruppenspiel(e) nicht beendet (Race to ${raceGroup} noch nicht erreicht). Die KO-Runde kann erst danach starten.</span>` +
+                            `<input type="checkbox" class="status-chk no-print" id="chk-mark-open" title="Noch nicht beendete Gruppenspiele im Spielplan gelb hervorheben"${markOpen ? ' checked' : ''}>` +
+                        '</div>';
+                    const chkOpen = document.getElementById('chk-mark-open');
+                    if (chkOpen) chkOpen.addEventListener('change', (ev) => setMarkOpen(ev.target.checked));
                 } else {
+                    // Nichts mehr offen: Ankreuzfeld entfaellt, Markierung wird geloescht
+                    markOpen = false;
                     statusBox.className = 'hint-box ok';
                     statusBox.textContent = `Alle Gruppenspiele sind beendet. Die KO-Runde kann gestartet werden: je ${qualifiersPerGroup()} Spieler aus ${groupCount} Gruppen.`;
                 }
@@ -2289,6 +2354,7 @@
 
         btnStart.style.display = 'none';
         btnReset.style.display = '';
+        markOpen = false;            // Ankreuzfeld gilt nur fuer die Gruppenphase
         const locked = seedsLocked();
         btnUnlock.style.display = (SEED_REORDER_ENABLED && locked) ? '' : 'none';
 
@@ -2688,6 +2754,7 @@
             : (isDrawn() ? 1 : 0);
         swapLog = Array.isArray(snap.swapLog) ? snap.swapLog.slice() : [];
         highlighted.clear();
+        markOpen = false;
 
         fillPlayerCountSelect();
         document.getElementById('player-count').value = String(playerCount);
