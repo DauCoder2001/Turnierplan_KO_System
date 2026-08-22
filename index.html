@@ -212,6 +212,14 @@
         .lock-badge { display: inline-block; background-color: #16a085; color: #fff; font-weight: normal; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; margin-left: 8px; vertical-align: middle; }
         .ko-pending { color: #7f8c8d; font-style: italic; font-weight: normal; }
         .ko-winner { color: #117a65; font-weight: bold; }
+        /* Spalte "Spiel": Bezeichnung bleibt einzeilig. Zusammen mit width:1% im
+           Tabellenkopf schrumpft die Spalte genau auf ihren Inhalt. */
+        .ko-match-label { color: #7f8c8d; font-weight: bold; white-space: nowrap; }
+        /* Ausnahme "Spiel um Platz 3": Umbruch nur zwischen "Spiel um" und "Platz 3" */
+        .ko-match-label.wrapable { white-space: normal; }
+        .ko-match-label.wrapable > span { white-space: nowrap; }
+        /* Spalte "Sieger": Spielername bleibt einzeilig */
+        .ko-winner-cell { white-space: nowrap; }
 
         #print-report { display: none; }
         #print-report h1 { font-size: 1.4rem; margin-bottom: 4px; }
@@ -2463,11 +2471,11 @@
                 <table class="table-style">
                     <thead>
                         <tr>
-                            <th style="width:110px;">Spiel</th>
+                            <th style="width:1%;">Spiel</th>
                             <th>Spieler 1</th>
                             <th style="width:150px;">Sätze</th>
                             <th>Spieler 2</th>
-                            <th style="width:130px;">Sieger</th>
+                            <th style="width:1%;">Sieger</th>
                         </tr>
                     </thead>
                     <tbody>${zeilen}</tbody>
@@ -2498,9 +2506,15 @@
             ? `<span class="ko-winner" data-pname="${m.winner}">${esc(currentNames[m.winner])}</span>`
             : `<span class="ko-pending">offen</span>`;
 
+        // Spielbezeichnung bleibt einzeilig. Einzige Ausnahme ist das Spiel um Platz 3:
+        // dort darf bei knappem Platz nach "Spiel um" umgebrochen werden.
+        const labelCell = (id === 'bro')
+            ? `<td class="ko-match-label wrapable"><span>Spiel um</span> <span>Platz 3</span></td>`
+            : `<td class="ko-match-label">${esc(m.def.label)}</td>`;
+
         return `
             <tr class="match-row ${cls}" data-p1="${m.ready ? m.p1 : -1}" data-p2="${m.ready ? m.p2 : -1}">
-                <td style="color:#7f8c8d; font-weight:bold;">${esc(m.def.label)}</td>
+                ${labelCell}
                 <td class="player-name-cell" style="text-align:right;">${name1}</td>
                 <td class="score-cell">
                     <input type="number" min="0" max="${maxFor(m.s2, m.race)}" class="score-input" data-store="k" data-race="${m.race}" data-key="${k1}" value="${m.s1 ?? ''}"${dis}>
@@ -2508,7 +2522,7 @@
                     <input type="number" min="0" max="${maxFor(m.s1, m.race)}" class="score-input" data-store="k" data-race="${m.race}" data-key="${k2}" value="${m.s2 ?? ''}"${dis}>
                 </td>
                 <td class="player-name-cell" style="text-align:left;">${name2}</td>
-                <td>${sieger}</td>
+                <td class="ko-winner-cell">${sieger}</td>
             </tr>`;
     }
 
