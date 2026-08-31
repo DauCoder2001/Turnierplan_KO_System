@@ -12,7 +12,7 @@
          daher muss apple-touch-icon.png im selben Verzeichnis liegen. -->
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <meta name="apple-mobile-web-app-title" content="Turnierplan KO">
-    <title>Billard Turnierplan - Gruppen mit KO-Runde v50</title>
+    <title>Billard Turnierplan - Gruppen mit KO-Runde v56</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 1600px; margin: 0 auto; background-color: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
@@ -34,6 +34,8 @@
         .settings-box { background-color: #e8f8f5; padding: 10px 20px; border-radius: 6px; border: 1px solid #a3e4d7; display: flex; align-items: center; gap: 10px; font-weight: bold; color: #117a65; flex-wrap: wrap; }
         .settings-box .sep { width: 1px; align-self: stretch; background-color: #a3e4d7; margin: 0 4px; }
         .settings-box label { font-size: 0.9rem; }
+        /* Anzeige der sich ergebenden KO-Feldgroesse hinter dem Auswahlfeld */
+        .feld-info { font-size: 0.8rem; font-weight: normal; color: #117a65; opacity: 0.85; white-space: nowrap; }
         select { padding: 6px 10px; border-radius: 4px; border: 1px solid #117a65; font-size: 1rem; font-weight: bold; background-color: #fff; cursor: pointer; }
         select.small { padding: 4px 6px; font-size: 0.9rem; }
 
@@ -77,6 +79,13 @@
         /* Gruppenzuordnung von Hand: Auswahlfeld hinter dem Spielernamen */
         .group-select { width: 100%; padding: 3px 2px; font-size: 0.8rem; font-weight: bold;
             border-radius: 4px; border: 1px solid #ced4da; background-color: #fff; cursor: pointer; box-sizing: border-box; }
+
+        /* --- Gesetzte Spieler: vor der Auslosung fest einer Gruppe zugeordnet --- */
+        /* Kraeftigerer Rahmen am Auswahlfeld und Ring am Kennzeichen */
+        .group-select.gesetzt { border-width: 2px; box-shadow: 0 0 0 2px rgba(17,122,101,0.10); }
+        .gbadge.gesetzt { outline: 2px solid #117a65; outline-offset: 1px; }
+        /* Auflistung der Setzungen im Hinweisfeld der Auslosung */
+        .seed-info { font-size: 0.8rem; line-height: 1.5; }
         .group-select.a { border-color: #16a085; color: #16a085; }
         .group-select.b { border-color: #2980b9; color: #2980b9; }
         .group-select.c { border-color: #d35400; color: #d35400; }
@@ -102,6 +111,29 @@
         .table-style th { background-color: #2c3e50; color: #ffffff; }
 
         .round-header { background-color: #e9ecef !important; color: #2c3e50 !important; font-weight: bold; font-size: 1rem; text-align: left !important; padding-left: 12px !important; }
+
+        /* --- Runde abschliessen: Symbol am rechten Rand der Runden-Kopfzeile --- */
+        .round-head-row { display: flex; align-items: center; gap: 10px; }
+        .round-head-row .titel { flex: 1; }
+        /* Zusatz hinter dem Rundennamen, z.B. "1 Spiel(e) noch nicht beendet" */
+        .round-head-row .stand { font-weight: normal; font-size: 0.8rem; color: #7f8c8d; }
+        /* Symbolknopf: Diskette zum Abschliessen, Stift zum Wiederoeffnen */
+        .round-btn { display: inline-flex; align-items: center; justify-content: center;
+            width: 30px; height: 26px; padding: 0; border-radius: 4px; cursor: pointer;
+            border: 1px solid #16a085; background: #fff; color: #16a085; flex-shrink: 0; }
+        .round-btn:hover { background: #16a085; color: #fff; }
+        .round-btn svg { width: 16px; height: 16px; display: block; }
+        /* Abgeschlossene Runde: Stift in gedeckter Farbe */
+        .round-btn.locked { border-color: #7f8c8d; color: #7f8c8d; }
+        .round-btn.locked:hover { background: #7f8c8d; color: #fff; }
+        /* Noch nicht abschliessbar, weil in der Runde ein Spiel offen ist */
+        .round-btn:disabled { border-color: #ced4da; color: #ced4da; background: #fff; cursor: not-allowed; }
+        /* Abgeschlossene Runde: Kopfzeile und Zeilen ruhig gruen hinterlegt */
+        .round-header.locked { background-color: #d4edda !important; color: #155724 !important; }
+        tr.locked-row td { background-color: #f4fbf6; }
+        .lock-hinweis { font-weight: normal; font-size: 0.78rem; color: #155724; }
+        /* Im Ausdruck sind die Bedienknoepfe ueberfluessig */
+        @media print { .round-btn { display: none !important; } }
         .match-row { transition: all 0.2s ease; }
         .match-row:hover { background-color: #f1f3f5; }
 
@@ -139,9 +171,17 @@
 
         /* Gruppen nebeneinander. Bei vier Gruppen entsteht durch den Umbruch
            automatisch ein 2x2-Raster, bei zwei Gruppen stehen sie nebeneinander. */
-        .group-grid { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
-        .group-col { flex: 1 1 340px; min-width: 300px; }
-        @media (max-width: 1200px) { .group-col { flex-basis: 100%; } }
+        /* Hoechstens zwei Gruppen nebeneinander: bei vier Gruppen entsteht dadurch
+           immer ein 2x2-Raster, bei zwei Gruppen stehen sie nebeneinander.
+           Die Spalte traegt einen Container, damit auch das Ziehen der Trennlinie
+           den Umbruch ausloest und nicht nur die Fensterbreite. */
+        .grid-col-right { container-type: inline-size; }
+        .group-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+        .group-col { min-width: 0; }
+        /* Wird die rechte Spalte zu schmal, stehen die Gruppen untereinander */
+        @container (max-width: 720px) { .group-grid { grid-template-columns: minmax(0, 1fr); } }
+        /* Rueckfallebene fuer Browser ohne Container-Abfragen */
+        @media (max-width: 1000px) { .group-grid { grid-template-columns: minmax(0, 1fr); } }
 
         .group-title { color: #fff; padding: 7px 12px; border-radius: 4px; font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         .group-title.a { background-color: #16a085; }
@@ -208,6 +248,15 @@
         /* Rundentabellen der KO-Phase */
         .ko-round-title { background-color: #2c3e50; color: #fff; padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 0.92rem; margin: 16px 0 8px 0; display: flex; justify-content: space-between; align-items: center; }
         .ko-round-title .meta { font-weight: normal; font-size: 0.8rem; opacity: 0.85; }
+        /* Linke Seite der KO-Kopfzeile: Titel, Hinweise und Symbolknopf in einer Reihe */
+        .ko-round-title .ko-round-links { display: inline-flex; align-items: center; gap: 8px; }
+        /* Symbolknopf auf dunklem Grund gut sichtbar halten */
+        .ko-round-title .round-btn { border-color: #a3e4d7; color: #a3e4d7; background: transparent; }
+        .ko-round-title .round-btn:hover { background: #a3e4d7; color: #2c3e50; }
+        .ko-round-title .round-btn.locked { border-color: #ced4da; color: #ced4da; }
+        .ko-round-title .round-btn.locked:hover { background: #ced4da; color: #2c3e50; }
+        .ko-round-title .round-btn:disabled { border-color: #5d6d6e; color: #5d6d6e; background: transparent; }
+        .lock-badge.abgeschlossen { background-color: #7f8c8d; }
         /* Badge, wenn eine Runde durch Ergebnisse der Folgerunde gesperrt ist */
         .lock-badge { display: inline-block; background-color: #16a085; color: #fff; font-weight: normal; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; margin-left: 8px; vertical-align: middle; }
         .ko-pending { color: #7f8c8d; font-style: italic; font-weight: normal; }
@@ -356,7 +405,7 @@
 <div class="container">
     <div class="header-bar">
         <div class="title-group">
-            <h1><img class="logo" alt="Pool-Billard-Club Bassum e.V." src="data:image/png;base64,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">Billard Turnierplan - Gruppen mit KO-Runde<span class="versions-badge" title="Version dieser Datei">v50</span></h1>
+            <h1><img class="logo" alt="Pool-Billard-Club Bassum e.V." src="data:image/png;base64,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">Billard Turnierplan - Gruppen mit KO-Runde<span class="versions-badge" title="Version dieser Datei">v56</span></h1>
             <button id="btn-add-player" class="btn-add-player no-print" style="display:none;" title="Nachzügler in eine Gruppe mit Freilos aufnehmen: eingetragene Ergebnisse bleiben erhalten">Spieler nachtragen</button>
             <button id="btn-reset-all" class="btn-reset-all no-print" title="Neues Turnier starten: alle Eingaben werden gelöscht">Turnierplan zurücksetzen</button>
             <button id="btn-fullscreen" class="btn-fullscreen no-print" type="button" title="Vollbildmodus ein- oder ausschalten">Vollbild</button>
@@ -369,6 +418,9 @@
                 <option value="2">2</option>
                 <option value="4">4</option>
             </select>
+            <label for="qual-count" title="Anzahl der Spieler je Gruppe, die in die KO-Runde einziehen. Angeboten werden nur Werte, bei denen in jeder Gruppe mindestens ein Spieler ausscheidet und das KO-Feld 4, 8 oder 16 Spieler umfasst.">Weiter je Gruppe:</label>
+            <select id="qual-count"></select>
+            <span id="ko-field-info" class="feld-info" title="Anzahl der Spieler in der KO-Runde"></span>
             <label for="game-type">Spielart:</label>
             <select id="game-type">
                 <option value="8-Ball" selected>8-Ball</option>
@@ -379,12 +431,16 @@
             <div class="sep"></div>
             <label for="race-group" title="Race to in der Gruppenphase">Race to:</label>
             <select id="race-group" class="small"></select>
-            <label for="race-qf" title="Race to im Viertelfinale">VF:</label>
+            <label for="race-r16" id="lbl-race-r16" title="Race to im Achtelfinale" style="display:none;">AF:</label>
+            <select id="race-r16" class="small" style="display:none;"></select>
+            <label for="race-qf" id="lbl-race-qf" title="Race to im Viertelfinale">VF:</label>
             <select id="race-qf" class="small"></select>
             <label for="race-sf" title="Race to im Halbfinale und im Spiel um Platz 3">HF:</label>
             <select id="race-sf" class="small"></select>
             <label for="race-final" title="Race to im Finale">Finale:</label>
             <select id="race-final" class="small"></select>
+            <label for="race-p3" id="lbl-race-p3" title="Race to in Phase 3 (Platzierungsspiele)">P3:</label>
+            <select id="race-p3" class="small"></select>
         </div>
     </div>
 
@@ -418,7 +474,7 @@
                 </div>
 
                 <div class="card">
-                    <h2>2. Gruppen <span class="help-glue">auslosen<span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Die Teilnehmer werden reihum und zufällig auf die Gruppen verteilt. Bei 2 Gruppen kommen die ersten 4 jeder Gruppe weiter, bei 4 Gruppen die ersten 2 - das KO-Feld umfasst dadurch immer 8 Spieler. Die Zuordnung lässt sich anschließend oben über das Auswahlfeld hinter dem Spielernamen von Hand tauschen, solange noch kein Ergebnis eingetragen ist.</span></span></span></h2>
+                    <h2>2. Gruppen <span class="help-glue">auslosen<span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Die Teilnehmer werden zufällig auf die Gruppen verteilt. Wer in der Spielerliste über das Auswahlfeld hinter dem Namen fest in eine Gruppe gesetzt wurde, bleibt dort; ausgelost werden nur die übrigen. Die Setzungen bleiben auch bei erneutem Auslosen erhalten und stehen im Spielbericht. Wie viele Spieler je Gruppe weiterkommen, legt das Auswahlfeld <b>Weiter je Gruppe</b> in der Kopfzeile fest. Vorgabe sind 4 bei zwei Gruppen und 2 bei vier Gruppen, das ergibt wie bisher ein KO-Feld mit 8 Spielern. Angeboten werden nur Werte, die ein Feld mit 4, 8 oder 16 Spielern ergeben und bei denen in jeder Gruppe mindestens ein Spieler ausscheidet. Bei 16 Teilnehmern in 4 Gruppen sind das zum Beispiel 1 oder 2, nicht 4. Die Zuordnung lässt sich anschließend oben über das Auswahlfeld hinter dem Spielernamen von Hand tauschen, solange noch kein Ergebnis eingetragen ist.</span></span></span></h2>
                     <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
                         <button id="btn-draw" class="btn btn-primary">Gruppen auslosen</button>
                         <button id="btn-clear-scores" class="btn btn-secondary" title="Alle Ergebnisse auf 0 zurücksetzen, Gruppen bleiben">Ergebnisse zurücksetzen</button>
@@ -457,7 +513,7 @@
                 </div>
 
                 <div class="card">
-                    <h2>4. Phase 2 - <span class="help-glue">KO-Runde<span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Die 8 Qualifikanten ziehen in den KO-Baum ein: Viertelfinale, Halbfinale, Finale und Spiel um Platz 3. Wer verliert, scheidet aus. Mit dem Start werden die Gruppen-Platzierungen fixiert; spätere Korrekturen in Phase 1 ändern die Paarungen nicht mehr.<br>Das Spiel um Platz 3 wird mit der Race-to-Vorgabe des Halbfinals gespielt.</span></span></span></h2>
+                    <h2>4. Phase 2 - <span class="help-glue">KO-Runde<span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Die Qualifikanten ziehen in den KO-Baum ein. Je nach Feldgröße beginnt er mit dem Achtelfinale (16 Spieler), dem Viertelfinale (8) oder dem Halbfinale (4); am Ende stehen immer Finale und Spiel um Platz 3. Wer verliert, scheidet aus. Mit dem Start werden die Gruppen-Platzierungen fixiert; spätere Korrekturen in Phase 1 ändern die Paarungen nicht mehr.<br>Das Spiel um Platz 3 wird mit der Race-to-Vorgabe des Halbfinals gespielt.</span></span></span></h2>
                     <div id="ko-status" class="hint-box info"></div>
                     <div id="pairing-option-row" style="margin-bottom:12px; display:none;">
                         <label for="pairing-option" style="font-size:0.85rem; font-weight:600; color:#495057; margin-right:6px;">Paarungsschema Viertelfinale:</label>
@@ -477,7 +533,17 @@
                 </div>
 
                 <div class="card">
-                    <h2>5. Endtabelle</h2>
+                    <h2>5. Phase 3 - <span class="help-glue">Platzierungsspiele<span class="help-icon" tabindex="0" role="button" aria-label="Erklärung anzeigen">?<span class="help-body">Optionale Zusatzrunde für die Spieler, die die KO-Runde nicht erreicht haben. Sie werden nach der Gruppenwertung gereiht und spielen ihre Plätze paarweise aus: der Erste gegen den Zweiten, der Dritte gegen den Vierten und so fort. Jeder bestreitet genau ein Spiel; bei ungerader Anzahl bleibt der Letzte ohne Gegner und behält seinen Platz.<br>Ohne Start von Phase 3 bleibt es bei der bisherigen Berechnung aus der Gruppenwertung.</span></span></span></h2>
+                    <div id="phase3-status" class="hint-box info"></div>
+                    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+                        <button id="btn-start-phase3" class="btn btn-primary">Phase 3 starten</button>
+                        <button id="btn-reset-phase3" class="btn btn-danger" style="display:none;">Phase 3 zurücksetzen</button>
+                    </div>
+                    <div id="phase3-bracket"></div>
+                </div>
+
+                <div class="card">
+                    <h2>6. Endtabelle</h2>
                     <div id="final-note" class="info-note">Die Endtabelle steht erst nach dem Start der KO-Runde zur Verfügung.</div>
                     <table class="table-style final-table">
                         <thead>
@@ -519,7 +585,9 @@
 
     const STORAGE_PREFIX = 'billard-ko:';
     const STORAGE_VERSION = 1;
-    const MIN_PLAYERS = 15;
+    // Kleinste zulaessige Teilnehmerzahl. Acht Spieler ergeben bei zwei Gruppen
+    // je vier Teilnehmer und damit ein KO-Feld mit acht Spielern.
+    const MIN_PLAYERS = 8;
     const MAX_PLAYERS = 32;
     const ALL_GROUPS = ['A', 'B', 'C', 'D'];
     const RACE_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
@@ -533,19 +601,45 @@
     // Vorerst ausgeblendet. Auf true setzen, um das Panel wieder einzublenden.
     const SEED_PANEL_ENABLED = false;
 
-    // Aufbau des KO-Baums. Die vier Viertelfinals beziehen ihre Spieler aus der
-    // Setzliste, alle weiteren Spiele aus den Ergebnissen der Vorrunde.
+    // Zulaessige Groessen des KO-Feldes. Andere Werte wuerden Freilose im Baum
+    // erfordern und sind deshalb nicht vorgesehen.
+    const FIELD_SIZES = [4, 8, 16];
+
+    // Aufbau des KO-Baums, abhaengig von der Groesse des KO-Feldes.
+    // Die Spiele der ersten Runde (Eintraege ohne src) beziehen ihre Spieler aus
+    // der Setzliste, alle weiteren aus den Ergebnissen der Vorrunde.
     // take: 'w' = Sieger, 'l' = Verlierer des angegebenen Spiels.
-    const KO_MATCHES = [
-        { id: 'qf1', round: 'QF',  label: 'Viertelfinale 1', kurz: 'VF1' },
-        { id: 'qf2', round: 'QF',  label: 'Viertelfinale 2', kurz: 'VF2' },
-        { id: 'qf3', round: 'QF',  label: 'Viertelfinale 3', kurz: 'VF3' },
-        { id: 'qf4', round: 'QF',  label: 'Viertelfinale 4', kurz: 'VF4' },
-        { id: 'sf1', round: 'SF',  label: 'Halbfinale 1', kurz: 'HF1', src: [{ m: 'qf1', take: 'w' }, { m: 'qf2', take: 'w' }] },
-        { id: 'sf2', round: 'SF',  label: 'Halbfinale 2', kurz: 'HF2', src: [{ m: 'qf3', take: 'w' }, { m: 'qf4', take: 'w' }] },
-        { id: 'fin', round: 'FIN', label: 'Finale', kurz: 'Finale', src: [{ m: 'sf1', take: 'w' }, { m: 'sf2', take: 'w' }] },
-        { id: 'bro', round: 'BRO', label: 'Spiel um Platz 3', kurz: 'Platz 3', src: [{ m: 'sf1', take: 'l' }, { m: 'sf2', take: 'l' }] }
-    ];
+    function buildKoMatches(fieldSize) {
+        const list = [];
+        if (fieldSize === 16) {
+            // Achtelfinale als erste Runde, die Viertelfinals speisen sich daraus
+            for (let i = 1; i <= 8; i++) {
+                list.push({ id: 'af' + i, round: 'R16', label: 'Achtelfinale ' + i, kurz: 'AF' + i });
+            }
+            for (let i = 1; i <= 4; i++) {
+                list.push({ id: 'qf' + i, round: 'QF', label: 'Viertelfinale ' + i, kurz: 'VF' + i,
+                    src: [{ m: 'af' + (2 * i - 1), take: 'w' }, { m: 'af' + (2 * i), take: 'w' }] });
+            }
+        } else if (fieldSize === 8) {
+            for (let i = 1; i <= 4; i++) {
+                list.push({ id: 'qf' + i, round: 'QF', label: 'Viertelfinale ' + i, kurz: 'VF' + i });
+            }
+        }
+        for (let i = 1; i <= 2; i++) {
+            const hf = { id: 'sf' + i, round: 'SF', label: 'Halbfinale ' + i, kurz: 'HF' + i };
+            // Nur bei einem Feld ab acht Spielern gibt es eine Runde davor
+            if (fieldSize >= 8) hf.src = [{ m: 'qf' + (2 * i - 1), take: 'w' }, { m: 'qf' + (2 * i), take: 'w' }];
+            list.push(hf);
+        }
+        list.push({ id: 'fin', round: 'FIN', label: 'Finale', kurz: 'Finale', src: [{ m: 'sf1', take: 'w' }, { m: 'sf2', take: 'w' }] });
+        list.push({ id: 'bro', round: 'BRO', label: 'Spiel um Platz 3', kurz: 'Platz 3', src: [{ m: 'sf1', take: 'l' }, { m: 'sf2', take: 'l' }] });
+        return list;
+    }
+
+    // Spiele des aktuell gueltigen KO-Baums
+    function koMatches() {
+        return buildKoMatches(koFieldSize());
+    }
 
     // Automatische Sicherung: eigener Speicherplatz, taucht nicht in der Turnierliste auf
     const AUTOSAVE_KEY = STORAGE_PREFIX + '__autosave__';
@@ -568,11 +662,20 @@
     // Gruppenspiele gelb hervor. Schliesst sich mit den Spieler-Haken gegenseitig aus
     // und wird wie diese nicht mitgespeichert.
     let markOpen = false;
-    let raceGroup = 3, raceQF = 3, raceSF = 3, raceFinal = 3;
+    // Abgeschlossene Runden. Schluessel: "A-r0" fuer Gruppenrunden, "ko-QF" fuer KO-Runden.
+    let lockedRounds = {};
+    let qualPerGroup = 2;                   // Spieler je Gruppe, die in die KO-Runde einziehen
+    let raceGroup = 3, raceR16 = 3, raceQF = 3, raceSF = 3, raceFinal = 3;
+    let racePhase3 = 3;                     // Race to in Phase 3 (Platzierungsspiele)
+    // Phase 3: null oder { order: [Startnummern in Wertungsreihenfolge], abPlatz: n }
+    let phase3 = null;
+    let phase3Scores = {};                  // Phase 3: Key "p3-0-p1"
     let pairingOption = 1;                  // Paarungsschema Viertelfinale (wählbar nur bei 2 Gruppen: 1=Standard, 2=über Kreuz)
     // KO-Runde: null oder { seeds: [8 Startnummern], option, groupCount, ranking: { A: [idx...] } }
     let ko = null;
     let tournamentStart = null;             // Zeitpunkt des ersten eingetragenen Ergebnisses als ISO-String
+    // Vor der Auslosung fest gesetzte Spieler: Startnummer -> Gruppenbuchstabe
+    let seeded = {};
     let pendingSwap = null;                 // Offener Tauschdialog: { idxOut, from, to } oder null
     let groupCellsSig = '';                 // Kennung der zuletzt gezeichneten Gruppenspalte
     let groupGridSig = '';                  // Kennung des zuletzt aufgebauten Gruppenrasters
@@ -588,12 +691,14 @@
     window.addEventListener('DOMContentLoaded', () => {
         fillPlayerCountSelect();
         fillRaceSelects();
+        fillQualSelect();
 
         document.getElementById('player-count').addEventListener('change', (e) => {
             if (confirm("Bist du sicher? Bei Änderung der Teilnehmerzahl werden Auslosung und alle Ergebnisse gelöscht!\n\nDenk an das Speichern des Turnierergebnisses.")) {
                 restorePunktAnlegen('Vor: Teilnehmerzahl ändern');
                 const num = parseInt(e.target.value);
                 groupCount = defaultGroupCount(num);
+                qualPerGroup = defaultQual(groupCount);
                 document.getElementById('group-count').value = String(groupCount);
                 initTournament(num);
                 zeigeRestoreBanner('Teilnehmerzahl geändert.');
@@ -613,8 +718,36 @@
             }
             restorePunktAnlegen('Vor: Gruppenanzahl ändern');
             groupCount = neu;
+            qualPerGroup = defaultQual(neu);
             initTournament(playerCount);
             zeigeRestoreBanner('Gruppenanzahl geändert.');
+        });
+
+        // Anzahl der Qualifikanten je Gruppe. Die Gruppenphase bleibt unberuehrt,
+        // nur eine bereits laufende KO-Runde muss dafuer zurueckgesetzt werden.
+        document.getElementById('qual-count').addEventListener('change', (e) => {
+            const neu = parseInt(e.target.value);
+            if (neu === qualPerGroup) return;
+            if (ko && !confirm(
+                `Auf ${neu} Qualifikanten je Gruppe umstellen?\n\n` +
+                `Das KO-Feld umfasst dann ${groupCount * neu} Spieler. Die laufende KO-Runde ` +
+                `wird zurückgesetzt, alle eingetragenen KO-Ergebnisse gehen verloren. ` +
+                `Die Gruppenphase bleibt erhalten.`)) {
+                e.target.value = String(qualPerGroup);
+                return;
+            }
+            const hatteKO = ko !== null;
+            if (hatteKO) restorePunktAnlegen('Vor: Qualifikanten je Gruppe ändern');
+            qualPerGroup = neu;
+            ko = null;
+            koScores = {};
+            phase3 = null;
+            phase3Scores = {};
+            clearRoundLocks('ko-');
+            clearRoundLocks('p3');
+            renderKoFieldInfo();
+            renderAll();
+            if (hatteKO) zeigeRestoreBanner('Qualifikanten je Gruppe geändert, KO-Runde zurückgesetzt.');
         });
 
         document.getElementById('game-type').addEventListener('change', (e) => {
@@ -644,14 +777,18 @@
 
         // Race-to-Vorgaben: je Runde eigene Auswahl
         bindRaceSelect('race-group', () => raceGroup, (v) => { raceGroup = v; });
+        bindRaceSelect('race-r16',   () => raceR16,   (v) => { raceR16 = v; });
         bindRaceSelect('race-qf',    () => raceQF,    (v) => { raceQF = v; });
         bindRaceSelect('race-sf',    () => raceSF,    (v) => { raceSF = v; });
         bindRaceSelect('race-final', () => raceFinal, (v) => { raceFinal = v; });
+        bindRaceSelect('race-p3',    () => racePhase3, (v) => { racePhase3 = v; });
 
         document.getElementById('btn-draw').addEventListener('click', drawGroups);
         document.getElementById('btn-clear-scores').addEventListener('click', clearAllScores);
         document.getElementById('btn-start-ko').addEventListener('click', startKO);
         document.getElementById('btn-reset-ko').addEventListener('click', resetKO);
+        document.getElementById('btn-start-phase3').addEventListener('click', startPhase3);
+        document.getElementById('btn-reset-phase3').addEventListener('click', resetPhase3);
         document.getElementById('btn-unlock-seeds').addEventListener('click', unlockSeeds);
         document.getElementById('save-pdf-btn').addEventListener('click', () => {
             buildPrintReport();
@@ -708,7 +845,7 @@
 
     // Alle vier Race-to-Auswahlfelder mit denselben Werten fuellen
     function fillRaceSelects() {
-        [['race-group', raceGroup], ['race-qf', raceQF], ['race-sf', raceSF], ['race-final', raceFinal]]
+        [['race-group', raceGroup], ['race-r16', raceR16], ['race-qf', raceQF], ['race-sf', raceSF], ['race-final', raceFinal], ['race-p3', racePhase3]]
             .forEach(([id, val]) => {
                 document.getElementById(id).innerHTML =
                     RACE_OPTIONS.map(n => `<option value="${n}"${n === val ? ' selected' : ''}>${n}</option>`).join('');
@@ -747,9 +884,57 @@
         return ALL_GROUPS.slice(0, groupCount);
     }
 
-    // Anzahl der Qualifikanten je Gruppe. Das KO-Feld umfasst dadurch immer 8 Spieler.
-    function qualifiersPerGroup(gc) {
+    // Vorbelegung der Qualifikanten je Gruppe: bei zwei Gruppen kommen vier weiter,
+    // bei vier Gruppen zwei. In beiden Faellen ergibt das ein KO-Feld mit acht Spielern.
+    function defaultQual(gc) {
         return (gc || groupCount) === 2 ? 4 : 2;
+    }
+
+    // Aktuell eingestellte Anzahl der Qualifikanten je Gruppe
+    function qualifiersPerGroup() {
+        return qualPerGroup;
+    }
+
+    // Groesse des KO-Feldes. Waehrend einer laufenden KO-Runde gilt der beim
+    // Start fixierte Wert, damit spaetere Umstellungen den Baum nicht verbiegen.
+    function koFieldSize() {
+        return ko ? ko.groupCount * ko.qual : groupCount * qualPerGroup;
+    }
+
+    // Zulaessige Werte fuer "Weiter je Gruppe". Zwei Bedingungen:
+    // 1. Das KO-Feld muss 4, 8 oder 16 Spieler umfassen.
+    // 2. In jeder Gruppe muss mindestens ein Spieler ausscheiden. Kaemen alle
+    //    weiter, wuerde die Gruppenphase nur noch die Setzliste bestimmen.
+    // Massgeblich ist die kleinste Gruppe bei gleichmaessiger Verteilung.
+    function qualOptions(gc) {
+        const g = gc || groupCount;
+        const kleinsteGruppe = Math.floor(playerCount / g);
+        return FIELD_SIZES.filter(feld => feld % g === 0 && (feld / g) < kleinsteGruppe).map(feld => feld / g);
+    }
+
+    // Auswahlfeld "Weiter je Gruppe" aufbauen. Passt der bisherige Wert nicht mehr
+    // zur Gruppen- oder Teilnehmerzahl, wird auf die Vorbelegung zurueckgefallen.
+    function fillQualSelect() {
+        const sel = document.getElementById('qual-count');
+        const werte = qualOptions(groupCount);
+        if (werte.indexOf(qualPerGroup) === -1) {
+            qualPerGroup = werte.indexOf(defaultQual(groupCount)) !== -1 ? defaultQual(groupCount) : werte[werte.length - 1];
+        }
+        sel.innerHTML = werte.map(q => `<option value="${q}"${q === qualPerGroup ? ' selected' : ''}>${q}</option>`).join('');
+        renderKoFieldInfo();
+    }
+
+    // Anzeige der sich ergebenden KO-Feldgroesse und Sichtbarkeit der Race-to-Vorgabe
+    // fuer das Achtelfinale (nur bei einem Feld mit 16 Spielern).
+    function renderKoFieldInfo() {
+        const info = document.getElementById('ko-field-info');
+        const feld = koFieldSize();
+        if (info) info.textContent = `(KO-Feld: ${feld})`;
+        const zeigeAF = feld === 16 ? '' : 'none';
+        const lbl = document.getElementById('lbl-race-r16');
+        const sel = document.getElementById('race-r16');
+        if (lbl) lbl.style.display = zeigeAF;
+        if (sel) sel.style.display = zeigeAF;
     }
 
     // ---------------------------------------------------------------------
@@ -983,9 +1168,13 @@
         if (groupCount === 4) pairingOption = 1;
         currentNames = DEFAULT_NAMES.slice(0, num);
         resetGroupState();
+        seeded = {};
         scores = {};
         koScores = {};
+        phase3 = null;
+        phase3Scores = {};
         manualOrder = {};
+        lockedRounds = {};
         highlighted.clear();
         markOpen = false;
         ko = null;
@@ -995,6 +1184,7 @@
 
         document.getElementById('player-count').value = String(playerCount);
         document.getElementById('group-count').value = String(groupCount);
+        fillQualSelect();
 
         groupGridSig = '';
         renderPlayerInputs();
@@ -1022,6 +1212,7 @@
 
     function gKey(grp, rIdx, gIdx, p) { return `${grp}-r${rIdx}-g${gIdx}-p${p}`; }
     function kKey(id, p) { return `${id}-p${p}`; }
+    function pKey(i, p) { return `p3-${i}-p${p}`; }
 
     // ---------------------------------------------------------------------
     // Race to: Zielvorgabe an Saetzen
@@ -1035,6 +1226,7 @@
     // Zielvorgabe der jeweiligen Runde. Das Spiel um Platz 3 laeuft mit der
     // Vorgabe des Halbfinals.
     function raceForRound(round) {
+        if (round === 'R16') return raceR16;
         if (round === 'QF') return raceQF;
         if (round === 'SF' || round === 'BRO') return raceSF;
         if (round === 'FIN') return raceFinal;
@@ -1143,14 +1335,17 @@
             });
         });
         if (ko) {
-            KO_MATCHES.forEach(m => clampPair(koScores, kKey(m.id, 1), kKey(m.id, 2), raceForRound(m.round)));
+            koMatches().forEach(m => clampPair(koScores, kKey(m.id, 1), kKey(m.id, 2), raceForRound(m.round)));
+        }
+        if (phase3) {
+            phase3Paare().forEach((paar, i) => clampPair(phase3Scores, pKey(i, 1), pKey(i, 2), racePhase3));
         }
     }
 
     // Liegt ueberhaupt schon ein Ergebnis vor?
     function hasAnyScore() {
         const any = (obj) => Object.keys(obj).some(k => typeof obj[k] === 'number' && obj[k] > 0);
-        return any(scores) || any(koScores);
+        return any(scores) || any(koScores) || any(phase3Scores);
     }
 
     // Turnierstart einmalig festhalten, sobald das erste Ergebnis eingetragen wurde
@@ -1162,31 +1357,136 @@
         tournamentStart = new Date().toISOString();
     }
 
+    // In dieser Datei sind die Gruppen von der Gruppenanzahl abhaengig
+    function seedGroups() { return activeGroups(); }
+
+    // =====================================================================
+    // Gesetzte Spieler: feste Gruppenzuordnung vor der Auslosung
+    // =====================================================================
+    // Die Turnierleitung kann einzelne Spieler schon vor der Auslosung fest einer
+    // Gruppe zuordnen. Die Auslosung verteilt danach nur noch die uebrigen
+    // Teilnehmer. Die Setzungen ueberstehen ein erneutes Auslosen, wandern bei
+    // einem Handtausch mit und werden im Spielbericht ausgewiesen.
+
+    // Startnummern der Spieler, die in dieser Gruppe gesetzt sind
+    function seededOf(g) {
+        return Object.keys(seeded).map(Number)
+            .filter(i => i < playerCount && seeded[i] === g)
+            .sort((a, b) => a - b);
+    }
+
+    // Anzahl aller gueltigen Setzungen
+    function seededCount() {
+        return seedGroups().reduce((summe, g) => summe + seededOf(g).length, 0);
+    }
+
+    // Zielstaerke jeder Gruppe. Geht die Teilnehmerzahl nicht glatt auf, bekommen
+    // die vorderen Gruppen den Rest - so wie die Auslosung bisher verteilt hat.
+    function targetSizes() {
+        const gs = seedGroups();
+        const basis = Math.floor(playerCount / gs.length);
+        const rest = playerCount % gs.length;
+        const out = {};
+        gs.forEach((g, k) => { out[g] = basis + (k < rest ? 1 : 0); });
+        return out;
+    }
+
+    // Gruppen, in die mehr Spieler gesetzt wurden, als hineinpassen
+    function overSeededGroups() {
+        const ziel = targetSizes();
+        return seedGroups().filter(g => seededOf(g).length > ziel[g]);
+    }
+
+    // Setzungen verwerfen, die nicht mehr zur Teilnehmer- oder Gruppenzahl passen
+    function pruneSeeded() {
+        const gs = seedGroups();
+        Object.keys(seeded).forEach(k => {
+            if (parseInt(k) >= playerCount || gs.indexOf(seeded[k]) === -1) delete seeded[k];
+        });
+    }
+
+    // Gruppen nach den Setzungen befuellen und die uebrigen Spieler zufaellig
+    // verteilen. Die Zielstaerken werden dabei genau eingehalten.
+    function verteileMitSetzungen() {
+        const gs = seedGroups();
+        pruneSeeded();
+
+        // 1. Gesetzte Spieler direkt in ihre Gruppe
+        gs.forEach(g => seededOf(g).forEach(idx => groups[g].push(idx)));
+
+        // 2. Alle uebrigen mischen (Fisher-Yates)
+        const rest = [];
+        for (let i = 0; i < playerCount; i++) { if (seeded[i] === undefined) rest.push(i); }
+        for (let i = rest.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [rest[i], rest[j]] = [rest[j], rest[i]];
+        }
+
+        // 3. Reihum in die Gruppe mit dem groessten Rueckstand auf ihre Zielstaerke,
+        //    bei Gleichstand zufaellig. Danach stimmen alle Gruppenstaerken.
+        const ziel = targetSizes();
+        rest.forEach(idx => {
+            const luecke = (g) => ziel[g] - groups[g].length;
+            const groesste = Math.max.apply(null, gs.map(luecke));
+            const kandidaten = gs.filter(g => luecke(g) === groesste);
+            groups[kandidaten[Math.floor(Math.random() * kandidaten.length)]].push(idx);
+        });
+    }
+
+    // Auflistung der Setzungen fuer Hinweisfelder, z.B. "A: Meier, Schulz"
+    function seedListeHtml(trenner) {
+        return seedGroups().map(g => {
+            const l = seededOf(g).map(i => esc(currentNames[i]));
+            return l.length ? `<b>${g}:</b> ${l.join(', ')}` : null;
+        }).filter(Boolean).join(trenner || ' &nbsp;&middot;&nbsp; ');
+    }
+
+    // Hinweis zu den Setzungen fuer das Feld unter "Gruppen auslosen".
+    // Liefert leeren Text, wenn nichts gesetzt ist.
+    function seedHinweisHtml() {
+        const zuviel = overSeededGroups();
+        if (zuviel.length > 0) {
+            const ziel = targetSizes();
+            return `<b>Zu viele Setzungen in Gruppe ${zuviel.join(', ')}.</b> Möglich sind ` +
+                   seedGroups().map(g => `${g}: ${ziel[g]}`).join(', ') +
+                   ` Spieler. Die Auslosung ist gesperrt, bis die Setzungen passen.`;
+        }
+        const n = seededCount();
+        if (n === 0) return '';
+        return `<span class="seed-info">${n} Spieler fest gesetzt &ndash; ${seedListeHtml()}. ` +
+               `Die übrigen werden ausgelost.</span>`;
+    }
+
     // ---------------------------------------------------------------------
     // Auslosung und Spielplan
     // ---------------------------------------------------------------------
     function drawGroups() {
+        const zuviel = overSeededGroups();
+        if (zuviel.length > 0) {
+            const ziel = targetSizes();
+            alert(`In Gruppe ${zuviel.join(', ')} sind zu viele Spieler fest gesetzt.\n\n` +
+                  `Möglich sind ${activeGroups().map(g => g + ': ' + ziel[g]).join(', ')} Spieler.\n` +
+                  `Bitte zuerst Setzungen in der Spielerliste aufheben.`);
+            return;
+        }
         if (isDrawn() && !confirm("Neu auslosen? Alle bisherigen Ergebnisse und die KO-Runde werden gelöscht.")) return;
         const warNeuauslosung = isDrawn();   // erste Auslosung verwirft nichts -> kein Restore-Punkt
         if (warNeuauslosung) restorePunktAnlegen('Vor: Neu auslosen');
 
-        // Fisher-Yates-Shuffle über alle Startnummern
-        const pool = Array.from({ length: playerCount }, (_, i) => i);
-        for (let i = pool.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [pool[i], pool[j]] = [pool[j], pool[i]];
-        }
-
-        // Reihum verteilen: die Gruppenstaerken unterscheiden sich dadurch um hoechstens einen Spieler
+        // Gesetzte Spieler bleiben in ihrer Gruppe, alle uebrigen werden zufaellig
+        // verteilt. Die Gruppenstaerken unterscheiden sich dabei um hoechstens einen Spieler.
         const gs = activeGroups();
         resetGroupState();
-        pool.forEach((idx, i) => groups[gs[i % gs.length]].push(idx));
+        verteileMitSetzungen();
         gs.forEach(g => { groupRounds[g] = generateRoundRobin(groups[g]); });
 
         scores = {};
         koScores = {};
+        phase3Scores = {};
         manualOrder = {};
+        lockedRounds = {};
         ko = null;
+        phase3 = null;
         tournamentStart = null;
         initScoresToZero();
 
@@ -1213,7 +1513,10 @@
         restorePunktAnlegen('Vor: Ergebnisse auf 0');
         scores = {};
         koScores = {};
+        phase3Scores = {};
+        phase3 = null;
         manualOrder = {};
+        lockedRounds = {};
         activeGroups().forEach(g => tieGroups[g] = []);
         ko = null;
         tournamentStart = null;
@@ -1411,6 +1714,7 @@
         groupRounds[ziel] = generateRoundRobin(groups[ziel]);
         rebuildGroupScoresFromPairs(ziel, alteErgebnisse);
         clearManualOrderForGroup(ziel);
+        clearRoundLocks(ziel + '-r');
         tieGroups[ziel] = [];
 
         // Teilnehmerauswahl nachziehen, ohne deren change-Ereignis auszuloesen
@@ -1427,6 +1731,7 @@
     // Rendering
     // ---------------------------------------------------------------------
     function renderAll() {
+        renderKoFieldInfo();
         renderGroupGrid();
         renderDrawSummary();
         renderGroupCells();
@@ -1435,6 +1740,7 @@
             renderGroupRanking(grp);
         });
         renderKO();
+        renderPhase3();
         renderFinalTable();
         applyHighlights();
         updateAddPlayerButton();
@@ -1530,22 +1836,37 @@
 
         const gs = activeGroups();
         const locked = groupsLocked();
-        const sig = (locked ? 'L' : 'U') + '|' + gs.map(g => (groups[g] || []).join(',')).join('|');
+        const gezogen = isDrawn();
+        const sig = (locked ? 'L' : 'U') + (gezogen ? 'D' : 'N') + '|' +
+            gs.map(g => (groups[g] || []).join(',')).join('|') + '|' + JSON.stringify(seeded);
         if (sig === groupCellsSig) return;      // nichts veraendert, Auswahlfelder stehen lassen
         groupCellsSig = sig;
 
         cells.forEach(cell => {
             const index = parseInt(cell.dataset.index);
             const grp = groupOf(index);
+            const gesetzt = seeded[index];
+
+            // Vor der Auslosung: Spieler fest in eine Gruppe setzen (oder frei lassen)
+            if (!gezogen && !locked) {
+                const options = `<option value=''${gesetzt ? '' : ' selected'}>-</option>` +
+                    gs.map(g => `<option value='${g}'${g === gesetzt ? ' selected' : ''}>${g}</option>`).join('');
+                cell.innerHTML =
+                    `<select class='group-select${gesetzt ? ' ' + gesetzt.toLowerCase() + ' gesetzt' : ''}' data-index='${index}' ` +
+                    `title='${gesetzt ? 'Fest in Gruppe ' + gesetzt + ' gesetzt' : 'Spieler fest in eine Gruppe setzen (sonst wird ausgelost)'}'>${options}</select>`;
+                return;
+            }
+
             if (!grp || locked) {
                 const badgeClass = grp ? grp.toLowerCase() : 'none';
-                cell.innerHTML = `<span class='gbadge ${badgeClass}' title='Gruppe'>${grp ? grp : '-'}</span>`;
+                cell.innerHTML = `<span class='gbadge ${badgeClass}${gesetzt ? ' gesetzt' : ''}' ` +
+                    `title='${gesetzt ? 'Gruppe ' + grp + ', fest gesetzt' : 'Gruppe'}'>${grp ? grp : '-'}</span>`;
                 return;
             }
             const options = gs.map(g => `<option value='${g}'${g === grp ? ' selected' : ''}>${g}</option>`).join('');
             cell.innerHTML =
-                `<select class='group-select ${grp.toLowerCase()}' data-index='${index}' ` +
-                `title='Gruppe wechseln (Tausch mit einem Spieler der Zielgruppe)'>${options}</select>`;
+                `<select class='group-select ${grp.toLowerCase()}${gesetzt ? ' gesetzt' : ''}' data-index='${index}' ` +
+                `title='${gesetzt ? 'Fest gesetzt. ' : ''}Gruppe wechseln (Tausch mit einem Spieler der Zielgruppe)'>${options}</select>`;
         });
 
         document.querySelectorAll('#player-inputs-container .group-select')
@@ -1565,7 +1886,8 @@
         const note = document.getElementById('group-edit-note');
         if (!isDrawn()) {
             note.className = 'group-edit-note';
-            note.textContent = 'Die Gruppenzuordnung steht nach der Auslosung zur Verfügung.';
+            note.textContent = 'Über das Auswahlfeld hinter dem Namen lassen sich einzelne Spieler fest in eine ' +
+                'Gruppe setzen. Wer auf "-" steht, wird ausgelost. Nach der Auslosung dient dasselbe Feld dem Tausch.';
             return;
         }
         if (locked) {
@@ -1583,6 +1905,16 @@
     function onGroupSelectChange(e) {
         const idx = parseInt(e.target.dataset.index);
         const to = e.target.value;
+
+        // Vor der Auslosung wird hier die feste Gruppenzuordnung festgelegt
+        if (!isDrawn()) {
+            if (to) seeded[idx] = to; else delete seeded[idx];
+            forceRenderGroupCells();
+            renderDrawSummary();
+            scheduleAutosave();
+            return;
+        }
+
         const from = groupOf(idx);
         if (!from || from === to) { closeSwapPanel(); return; }
         if (groupsLocked()) { forceRenderGroupCells(); return; }
@@ -1648,11 +1980,18 @@
 
         scores = {};
         koScores = {};
+        phase3Scores = {};
         manualOrder = {};
+        lockedRounds = {};
         activeGroups().forEach(g => tieGroups[g] = []);
         ko = null;
+        phase3 = null;
         tournamentStart = null;
         initScoresToZero();
+
+        // Setzungen wandern mit: wer gesetzt war, gilt in seiner neuen Gruppe als gesetzt
+        if (seeded[idxOut] !== undefined) seeded[idxOut] = to;
+        if (seeded[idxIn] !== undefined) seeded[idxIn] = from;
 
         const nameOut = currentNames[idxOut];
         const nameIn = currentNames[idxIn];
@@ -1669,11 +2008,16 @@
     function renderDrawSummary() {
         const box = document.getElementById('draw-summary');
         const gs = activeGroups();
+        const zuviel = overSeededGroups();
+        const btnDraw = document.getElementById('btn-draw');
+        if (btnDraw) btnDraw.disabled = zuviel.length > 0;
 
         if (!isDrawn()) {
-            box.className = 'hint-box info';
+            const seedText = seedHinweisHtml();
+            box.className = zuviel.length > 0 ? 'hint-box' : 'hint-box info';
             box.innerHTML = `Noch keine Auslosung. Vorgesehen sind ${groupCount} Gruppen, ` +
-                `davon kommen je ${qualifiersPerGroup()} Spieler in die KO-Runde.`;
+                `davon kommen je ${qualifiersPerGroup()} Spieler in die KO-Runde.` +
+                (seedText ? '<br>' + seedText : '');
             gs.forEach(g => {
                 const el = document.getElementById('meta-' + g);
                 if (el) el.textContent = '-';
@@ -1702,10 +2046,22 @@
                 `Mit ${groupCount === 2 ? '4' : '2'} Gruppen wären es deutlich weniger.`;
         }
 
+        // KO-Spiele: je Runde die Haelfte der verbliebenen Spieler, dazu das Spiel um Platz 3
+        const feld = koFieldSize();
+        const koSpiele = feld - 1 + 1;
+        const runden = [];
+        if (feld === 16) runden.push('8 Achtelfinals');
+        if (feld >= 8) runden.push('4 Viertelfinals');
+        runden.push('2 Halbfinals', 'Finale', 'Spiel um Platz 3');
+
+        const seedZeile = seededCount() > 0
+            ? `<br><b>Gesetzt:</b> ${seedListeHtml()}`
+            : '';
+
         box.className = zuKlein.length > 0 ? 'hint-box' : 'hint-box ok';
-        box.innerHTML = zeilen.join('<br>') +
-            `<br><b>Spiele:</b> ${gesamt} in der Gruppenphase, 8 in der KO-Runde` +
-            ` (4 Viertelfinals, 2 Halbfinals, Finale, Spiel um Platz 3).` + warnung;
+        box.innerHTML = zeilen.join('<br>') + seedZeile +
+            `<br><b>Spiele:</b> ${gesamt} in der Gruppenphase, ${koSpiele} in der KO-Runde` +
+            ` (${runden.join(', ')}).` + warnung;
     }
 
     function renderGroupSchedule(grp) {
@@ -1720,15 +2076,18 @@
 
         let matchCounter = 1;
         groupRounds[grp].forEach((round, rIdx) => {
+            const rKey = roundKey(grp, rIdx);
+            const gesperrt = isRoundLocked(rKey);
             const trHeader = document.createElement('tr');
-            trHeader.innerHTML = `<th colspan="4" class="round-header">${round.name}</th>`;
+            trHeader.innerHTML = `<th colspan="4" class="round-header${gesperrt ? ' locked' : ''}">` +
+                roundHeaderHtml(rKey, esc(round.name), countOpenGamesInRound(grp, rIdx)) + '</th>';
             tbody.appendChild(trHeader);
 
             round.pairs.forEach((pair, gIdx) => {
                 const tr = document.createElement('tr');
                 tr.dataset.p1 = pair[0];
                 tr.dataset.p2 = pair[1];
-                tr.className = pair[1] === -1 ? 'spielfrei-row match-row' : 'match-row';
+                tr.className = (pair[1] === -1 ? 'spielfrei-row match-row' : 'match-row') + (gesperrt ? ' locked-row' : '');
 
                 if (pair[1] === -1) {
                     tr.innerHTML = `
@@ -1747,9 +2106,9 @@
                         <td style="color:#7f8c8d; font-weight:bold;">${matchCounter++}</td>
                         <td class="player-name-cell" style="text-align:right;"><span data-pname="${pair[0]}">${esc(currentNames[pair[0]])}</span></td>
                         <td class="score-cell">
-                            <input type="number" min="0" max="${maxFor(scores[k2], raceGroup)}" class="score-input" data-store="g" data-race="${raceGroup}" data-key="${k1}" value="${scores[k1] ?? ''}">
+                            <input type="number" min="0" max="${maxFor(scores[k2], raceGroup)}" class="score-input" data-store="g" data-race="${raceGroup}" data-key="${k1}" value="${scores[k1] ?? ''}"${gesperrt ? ' disabled' : ''}>
                             <span class="vs-text">:</span>
-                            <input type="number" min="0" max="${maxFor(scores[k1], raceGroup)}" class="score-input" data-store="g" data-race="${raceGroup}" data-key="${k2}" value="${scores[k2] ?? ''}">
+                            <input type="number" min="0" max="${maxFor(scores[k1], raceGroup)}" class="score-input" data-store="g" data-race="${raceGroup}" data-key="${k2}" value="${scores[k2] ?? ''}"${gesperrt ? ' disabled' : ''}>
                         </td>
                         <td class="player-name-cell" style="text-align:left;"><span data-pname="${pair[1]}">${esc(currentNames[pair[1]])}</span></td>
                     `;
@@ -1759,11 +2118,15 @@
         });
 
         tbody.querySelectorAll('.score-input').forEach(input => input.addEventListener('input', onGroupScoreInput));
+        tbody.querySelectorAll('.round-btn').forEach(btn => btn.addEventListener('click', (e) => {
+            toggleRoundLock(e.currentTarget.dataset.roundKey);
+        }));
     }
 
     function onGroupScoreInput(e) {
         clampScoreInput(e.target, scores);
         markTournamentStart();
+        activeGroups().forEach(renderRoundHeaders);   // Symbol der betroffenen Runde nachfuehren
         renderGroupCells();          // sperrt die Gruppenzuordnung ab dem ersten Ergebnis
         activeGroups().forEach(renderGroupRanking);
         if (!ko) renderKO();          // Statushinweis "noch X Spiele offen" aktualisieren
@@ -1829,6 +2192,106 @@
         const chk = document.getElementById('chk-mark-open');
         if (chk) chk.checked = markOpen;
         applyHighlights();
+    }
+
+
+    // =====================================================================
+    // Runde abschliessen und wieder freigeben
+    // =====================================================================
+    // Eine Runde, deren Spiele alle beendet sind, kann ueber das Disketten-Symbol
+    // in ihrer Kopfzeile abgeschlossen werden. Die Satzfelder dieser Runde sind
+    // danach gesperrt, das Symbol wechselt zum Stift und gibt die Runde auf
+    // Nachfrage wieder frei. Der Zustand gehoert zum Turnierstand und wird
+    // mitgespeichert.
+    const SVG_DISKETTE = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 2h9.5L14 4.5V14H2V2zm2 1v4h7V3H4zm1 1h2v2H5V4zM4 10h8v3H4v-3z"/></svg>';
+    const SVG_STIFT = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M12.1 1.6a1.5 1.5 0 0 1 2.1 2.1l-.9.9-2.1-2.1.9-.9zM10.3 3.4l2.1 2.1-7 7L2 13.7l1.2-3.3 7.1-7z"/></svg>';
+
+    // Ist die Runde mit diesem Schluessel abgeschlossen?
+    function isRoundLocked(key) {
+        return lockedRounds[key] === true;
+    }
+
+    // Nur der Symbolknopf einer Runde
+    function roundButtonHtml(key, offeneSpiele) {
+        const gesperrt = isRoundLocked(key);
+        const kann = offeneSpiele === 0;
+        const titel = gesperrt
+            ? 'Runde zur Korrektur wieder freigeben'
+            : (kann ? 'Runde abschließen und gegen Änderungen sperren'
+                    : 'Erst möglich, wenn alle Spiele der Runde beendet sind');
+        return `<button type="button" class="round-btn no-print${gesperrt ? ' locked' : ''}" ` +
+               `data-round-key="${key}"${(!gesperrt && !kann) ? ' disabled' : ''} title="${titel}">` +
+               (gesperrt ? SVG_STIFT : SVG_DISKETTE) +
+               '</button>';
+    }
+
+    // Kopfzeile einer Runde: Name, Stand und Symbolknopf am rechten Rand
+    function roundHeaderHtml(key, name, offeneSpiele) {
+        const gesperrt = isRoundLocked(key);
+        const zusatz = gesperrt
+            ? '<span class="lock-hinweis">abgeschlossen</span>'
+            : (offeneSpiele === 0 ? '' : `<span class="stand">${offeneSpiele} Spiel(e) noch nicht beendet</span>`);
+        return '<div class="round-head-row">' +
+                   `<span class="titel">${name} ${zusatz}</span>` +
+                   roundButtonHtml(key, offeneSpiele) +
+               '</div>';
+    }
+
+    // Klick auf das Symbol: abschliessen ohne Rueckfrage, Freigeben nur nach Bestaetigung
+    function toggleRoundLock(key) {
+        if (isRoundLocked(key)) {
+            if (!confirm('Runde wieder freigeben?\n\nDie Ergebnisse dieser Runde lassen sich danach erneut ändern.')) return;
+            delete lockedRounds[key];
+        } else {
+            lockedRounds[key] = true;
+        }
+        renderAll();
+    }
+
+    // Sperren einzelner Runden verwerfen. Ohne Praefix werden alle geloescht,
+    // sonst nur die Schluessel, die mit dem Praefix beginnen (z.B. eine Gruppe).
+    function clearRoundLocks(praefix) {
+        if (!praefix) { lockedRounds = {}; return; }
+        Object.keys(lockedRounds).forEach(k => { if (k.indexOf(praefix) === 0) delete lockedRounds[k]; });
+    }
+
+    // Schluessel einer Gruppenrunde
+    function roundKey(grp, rIdx) { return grp + '-r' + rIdx; }
+
+    // Kennung der Tabelle, in der der Spielplan einer Gruppe steht
+    const SCHEDULE_ID = (grp) => 'schedule-body-' + grp;
+
+    // Nur die Runden-Kopfzeilen einer Gruppe auffrischen, ohne die Eingabefelder
+    // neu zu bauen. Sonst verlaesst der Schreibzeiger bei jeder Eingabe das Feld.
+    function renderRoundHeaders(grp) {
+        const tbody = document.getElementById(SCHEDULE_ID(grp));
+        if (!tbody) return;
+        (groupRounds[grp] || []).forEach((round, rIdx) => {
+            const rKey = roundKey(grp, rIdx);
+            const btn = tbody.querySelector(`.round-header [data-round-key="${rKey}"]`);
+            if (!btn) return;
+            const kopf = btn.closest('.round-header');
+            kopf.className = 'round-header' + (isRoundLocked(rKey) ? ' locked' : '');
+            kopf.innerHTML = roundHeaderHtml(rKey, esc(round.name), countOpenGamesInRound(grp, rIdx));
+            kopf.querySelector('.round-btn').addEventListener('click', (e) => {
+                toggleRoundLock(e.currentTarget.dataset.roundKey);
+            });
+        });
+    }
+
+
+    // Nicht beendete Spiele einer einzelnen Gruppenrunde
+    function countOpenGamesInRound(grp, rIdx) {
+        const round = (groupRounds[grp] || [])[rIdx];
+        if (!round) return 0;
+        let open = 0;
+        round.pairs.forEach((pair, gIdx) => {
+            if (pair[1] === -1) return;
+            const s1 = scores[gKey(grp, rIdx, gIdx, 1)];
+            const s2 = scores[gKey(grp, rIdx, gIdx, 2)];
+            if (!isGameFinished(s1, s2, raceGroup)) open++;
+        });
+        return open;
     }
 
     // ---------------------------------------------------------------------
@@ -2125,22 +2588,34 @@
     // ---------------------------------------------------------------------
     // KO-Runde: Setzliste
     // ---------------------------------------------------------------------
-    // Bezeichnung der acht Startplaetze. Bei zwei Gruppen die Gruppenplaetze
-    // A1-A4 und B1-B4, bei vier Gruppen die Gruppenersten (E) und -zweiten (Z).
-    function seedSlotLabels(gc) {
-        if ((gc || groupCount) === 2) return ['A1', 'A2', 'A3', 'A4', 'B1', 'B2', 'B3', 'B4'];
-        return ['G1E', 'G2E', 'G3E', 'G4E', 'G1Z', 'G2Z', 'G3Z', 'G4Z'];
+    // Bezeichnung der Startplaetze. Bei zwei Gruppen die Gruppenplaetze A1..An
+    // und B1..Bn, bei vier Gruppen die Gruppenersten (E), -zweiten (Z),
+    // -dritten (D) und -vierten (V).
+    function seedSlotLabels(gc, qual) {
+        const g = gc || groupCount;
+        const q = qual || qualifiersPerGroup();
+        const out = [];
+        if (g === 2) {
+            ['A', 'B'].forEach(grp => { for (let p = 1; p <= q; p++) out.push(grp + p); });
+            return out;
+        }
+        const kurz = ['E', 'Z', 'D', 'V'];
+        for (let p = 0; p < q; p++) {
+            for (let i = 1; i <= 4; i++) out.push('G' + i + (kurz[p] || (p + 1)));
+        }
+        return out;
     }
 
     // Ausgeschriebene Bedeutung eines Startplatzes für Tooltips
-    function seedSlotTitle(pos, gc) {
+    function seedSlotTitle(pos, gc, qual) {
         const g = gc || groupCount;
+        const q = qual || qualifiersPerGroup();
         if (g === 2) {
-            const grp = pos < 4 ? 'A' : 'B';
-            return `Gruppe ${grp}, Platz ${(pos % 4) + 1}`;
+            const grp = pos < q ? 'A' : 'B';
+            return `Gruppe ${grp}, Platz ${(pos % q) + 1}`;
         }
         const grp = ALL_GROUPS[pos % 4];
-        return `Gruppe ${grp}, Platz ${pos < 4 ? 1 : 2}`;
+        return `Gruppe ${grp}, Platz ${Math.floor(pos / 4) + 1}`;
     }
 
     // Viertelfinal-Paarungen als Indizes der Setzliste.
@@ -2150,15 +2625,43 @@
     // Vier Gruppen: G1E-G2Z, G2E-G1Z, G3E-G4Z, G4E-G3Z (Standard).
     //   Option 2 wird nicht mehr angeboten; ältere Speicherstände mit Option 2 (über Kreuz)
     //   bleiben aber ladbar und werden weiter korrekt dargestellt.
-    function qfSlotPairs(gc, opt) {
+    // Beim gewohnten Feld mit acht Spielern bleiben die bisherigen Tabellen
+    // unveraendert. Fuer Felder mit vier oder 16 Spielern wird der klassische
+    // Turnierbaum ueber die Rangliste der Qualifikanten gebildet.
+    function qfSlotPairs(gc, opt, qual) {
         const g = gc || groupCount;
         const o = opt || pairingOption;
-        if (g === 2) {
-            if (o === 2) return [[0, 7], [1, 6], [4, 3], [5, 2]];
-            return [[0, 7], [5, 2], [4, 3], [1, 6]];
+        const q = qual || qualifiersPerGroup();
+        if (g * q === 8) {
+            if (g === 2) {
+                if (o === 2) return [[0, 7], [1, 6], [4, 3], [5, 2]];
+                return [[0, 7], [5, 2], [4, 3], [1, 6]];
+            }
+            if (o === 2) return [[0, 7], [1, 6], [2, 5], [3, 4]];
+            return [[0, 5], [1, 4], [2, 7], [3, 6]];
         }
-        if (o === 2) return [[0, 7], [1, 6], [2, 5], [3, 4]];
-        return [[0, 5], [1, 4], [2, 7], [3, 6]];
+        return standardBracketPairs(g, q);
+    }
+
+    // Reihenfolge der Erstrundenspiele nach Setzlistenrang (klassischer Turnierbaum).
+    // Der Beste trifft auf den Schwaechsten; die beiden Ranglistenersten liegen in
+    // verschiedenen Haelften und koennen sich fruehestens im Finale begegnen.
+    function bracketOrder(feld) {
+        if (feld === 4) return [[1, 4], [2, 3]];
+        if (feld === 8) return [[1, 8], [4, 5], [2, 7], [3, 6]];
+        return [[1, 16], [8, 9], [4, 13], [5, 12], [2, 15], [7, 10], [3, 14], [6, 11]];
+    }
+
+    // Standard-Turnierbaum ueber die Rangliste: Rang 1 ist der Erste der Gruppe A,
+    // danach die uebrigen Gruppenersten, anschliessend alle Gruppenzweiten und so fort.
+    function standardBracketPairs(g, q) {
+        // Rang (1-basiert) in die Position innerhalb der Setzliste umrechnen
+        const rangZuPlatz = (r) => {
+            const p = Math.floor((r - 1) / g);   // Gruppenplatz, 0-basiert
+            const i = (r - 1) % g;               // Gruppe, 0-basiert
+            return g === 2 ? i * q + p : p * 4 + i;
+        };
+        return bracketOrder(g * q).map(paar => [rangZuPlatz(paar[0]), rangZuPlatz(paar[1])]);
     }
 
     // Standard-Setzliste aus den Gruppentabellen: erst alle Gruppenersten,
@@ -2220,12 +2723,13 @@
             seeds: buildDefaultSeeds(ranking),
             option: pairingOption,
             groupCount: groupCount,
+            qual: qualPerGroup,
             ranking: ranking
         };
 
         // Alle KO-Spiele mit 0:0 vorbelegen
         koScores = {};
-        KO_MATCHES.forEach(m => {
+        koMatches().forEach(m => {
             koScores[kKey(m.id, 1)] = 0;
             koScores[kKey(m.id, 2)] = 0;
         });
@@ -2233,6 +2737,7 @@
         renderGroupCells();
         activeGroups().forEach(renderGroupRanking);
         renderKO();
+        renderPhase3();
         renderFinalTable();
         applyHighlights();
         updateAddPlayerButton();
@@ -2244,6 +2749,10 @@
         restorePunktAnlegen('Vor: KO-Runde zurücksetzen');
         ko = null;
         koScores = {};
+        phase3 = null;
+        phase3Scores = {};
+        clearRoundLocks('ko-');
+        clearRoundLocks('p3');
         renderGroupCells();
         activeGroups().forEach(renderGroupRanking);
         renderKO();
@@ -2260,7 +2769,8 @@
         if (!confirm("Setzliste freigeben?\n\nAlle eingetragenen KO-Ergebnisse werden auf 0:0 zurückgesetzt. Die Setzliste selbst bleibt erhalten und kann anschließend geändert werden.")) return;
         restorePunktAnlegen('Vor: Setzliste freigeben');
         koScores = {};
-        KO_MATCHES.forEach(m => {
+        clearRoundLocks('ko-');
+        koMatches().forEach(m => {
             koScores[kKey(m.id, 1)] = 0;
             koScores[kKey(m.id, 2)] = 0;
         });
@@ -2290,16 +2800,16 @@
     // p1/p2 sind null, solange das Vorspiel noch nicht entschieden ist.
     function resolveKO() {
         if (!ko) return null;
-        const pairs = qfSlotPairs(ko.groupCount, ko.option);
-        const labels = seedSlotLabels(ko.groupCount);
+        const pairs = qfSlotPairs(ko.groupCount, ko.option, ko.qual);
+        const labels = seedSlotLabels(ko.groupCount, ko.qual);
         const res = {};
-        let qfNr = 0;
+        let erstRunde = 0;
 
-        KO_MATCHES.forEach(m => {
+        buildKoMatches(ko.groupCount * ko.qual).forEach(m => {
             let p1 = null, p2 = null, l1 = '', l2 = '';
 
-            if (m.round === 'QF') {
-                const sp = pairs[qfNr++];
+            if (!m.src) {
+                const sp = pairs[erstRunde++];
                 p1 = ko.seeds[sp[0]];
                 p2 = ko.seeds[sp[1]];
                 l1 = labels[sp[0]];
@@ -2341,7 +2851,9 @@
         // Paarungsschema ist nur bei zwei Gruppen wählbar (Option 2 = über Kreuz).
         // Bei vier Gruppen wird immer der Standard verwendet, die Auswahl bleibt ausgeblendet.
         const gc = ko ? ko.groupCount : groupCount;
-        optRow.style.display = gc === 2 ? '' : 'none';
+        // Das Paarungsschema ist nur beim Feld mit acht Spielern und zwei Gruppen waehlbar.
+        // Bei vier oder 16 Spielern gilt immer der klassische Turnierbaum.
+        optRow.style.display = (gc === 2 && koFieldSize() === 8) ? '' : 'none';
         document.getElementById('pairing-option').value = String(ko ? ko.option : pairingOption);
         renderPairingNote();
 
@@ -2376,7 +2888,7 @@
                     // Nichts mehr offen: Ankreuzfeld entfaellt, Markierung wird geloescht
                     markOpen = false;
                     statusBox.className = 'hint-box ok';
-                    statusBox.textContent = `Alle Gruppenspiele sind beendet. Die KO-Runde kann gestartet werden: je ${qualifiersPerGroup()} Spieler aus ${groupCount} Gruppen.`;
+                    statusBox.textContent = `Alle Gruppenspiele sind beendet. Die KO-Runde kann gestartet werden: je ${qualifiersPerGroup()} Spieler aus ${groupCount} Gruppen, das KO-Feld umfasst ${koFieldSize()} Spieler.`;
                 }
             }
             return;
@@ -2422,7 +2934,7 @@
     // Setzliste mit acht Startplaetzen und Pfeiltasten
     function renderSeedPanel(locked) {
         const panel = document.getElementById('seed-panel');
-        const labels = seedSlotLabels(ko.groupCount);
+        const labels = seedSlotLabels(ko.groupCount, ko.qual);
 
         const rows = ko.seeds.map((idx, k) => {
             const grp = groupOf(idx);
@@ -2432,7 +2944,7 @@
                 : '';
             return `
                 <div class="seed-row">
-                    <span class="seed-slot" title="${esc(seedSlotTitle(k, ko.groupCount))}">${labels[k]}</span>
+                    <span class="seed-slot" title="${esc(seedSlotTitle(k, ko.groupCount, ko.qual))}">${labels[k]}</span>
                     <span class="seed-name"><span data-pname="${idx}">${esc(currentNames[idx])}</span>
                         <span class="gbadge ${grp ? grp.toLowerCase() : 'none'}" style="margin-left:5px;">${grp || '-'}</span></span>
                     ${buttons}
@@ -2475,21 +2987,40 @@
 
         // "next" = Spiele der Folgerunde. Sobald dort ein Ergebnis > 0 steht,
         // wird diese Runde gesperrt. Sind alle Folge-Ergebnisse wieder 0, öffnet sie.
-        const bloecke = [
-            { titel: 'Runde 1 - Viertelfinale', race: raceQF, ids: ['qf1', 'qf2', 'qf3', 'qf4'], next: ['sf1', 'sf2'] },
-            { titel: 'Runde 2 - Halbfinale', race: raceSF, ids: ['sf1', 'sf2'], next: ['fin', 'bro'] },
-            { titel: 'Runde 3 - Finale und Spiel um Platz 3', race: null, ids: ['fin', 'bro'], next: [] }
-        ];
+        const feld = koFieldSize();
+        const bloecke = [];
+        let nr = 1;
+        if (feld === 16) {
+            bloecke.push({ titel: `Runde ${nr++} - Achtelfinale`, race: raceR16,
+                ids: ['af1', 'af2', 'af3', 'af4', 'af5', 'af6', 'af7', 'af8'],
+                next: ['qf1', 'qf2', 'qf3', 'qf4'] });
+        }
+        if (feld >= 8) {
+            bloecke.push({ titel: `Runde ${nr++} - Viertelfinale`, race: raceQF,
+                ids: ['qf1', 'qf2', 'qf3', 'qf4'], next: ['sf1', 'sf2'] });
+        }
+        bloecke.push({ titel: `Runde ${nr++} - Halbfinale`, race: raceSF,
+            ids: ['sf1', 'sf2'], next: ['fin', 'bro'] });
+        bloecke.push({ titel: `Runde ${nr++} - Finale und Spiel um Platz 3`, race: null,
+            ids: ['fin', 'bro'], next: [] });
 
         bracket.innerHTML = bloecke.map(b => {
             const locked = b.next.length > 0 && koRoundHasScore(b.next);
             const meta = b.race !== null
                 ? `Race to ${b.race}`
                 : `Finale: Race to ${raceFinal} &middot; Platz 3: Race to ${raceSF}`;
-            const zeilen = b.ids.map(id => buildKoRow(r[id], locked)).join('');
             const badge = locked ? '<span class="lock-badge">gesperrt</span>' : '';
+            // Offen sind alle Spiele der Runde, die noch nicht entschieden sind
+            const offeneKO = b.ids.filter(id => !r[id].finished).length;
+            const rKey = 'ko-' + b.ids[0];
+            const abgeschlossen = isRoundLocked(rKey);
+            const hinweis = abgeschlossen ? '<span class="lock-badge abgeschlossen">abgeschlossen</span>' : '';
+            const zeilen = b.ids.map(id => buildKoRow(r[id], locked || abgeschlossen, abgeschlossen)).join('');
             return `
-                <div class="ko-round-title"><span>${b.titel}${badge}</span><span class="meta">${meta}</span></div>
+                <div class="ko-round-title">
+                    <span class="ko-round-links">${b.titel}${badge}${hinweis}${roundButtonHtml(rKey, offeneKO)}</span>
+                    <span class="meta">${meta}</span>
+                </div>
                 <table class="table-style">
                     <thead>
                         <tr>
@@ -2505,17 +3036,20 @@
         }).join('');
 
         bracket.querySelectorAll('.score-input').forEach(input => input.addEventListener('input', onKoScoreInput));
+        bracket.querySelectorAll('.round-btn').forEach(btn => btn.addEventListener('click', (e) => {
+            toggleRoundLock(e.currentTarget.dataset.roundKey);
+        }));
     }
 
     // Eine Zeile der KO-Tabelle. Solange die Teilnehmer nicht feststehen,
     // wird die Herkunft angezeigt und die Eingabe gesperrt.
-    function buildKoRow(m, lockedByNext) {
+    function buildKoRow(m, lockedByNext, abgeschlossen) {
         const id = m.def.id;
         const k1 = kKey(id, 1), k2 = kKey(id, 2);
-        // Eingabe gesperrt, solange die Teilnehmer nicht feststehen ODER
-        // die Folgerunde bereits Ergebnisse enthält.
+        // Eingabe gesperrt, solange die Teilnehmer nicht feststehen, die Folgerunde
+        // bereits Ergebnisse enthält oder die Runde abgeschlossen wurde.
         const dis = (m.ready && !lockedByNext) ? '' : ' disabled';
-        const cls = m.ready ? (m.finished ? '' : 'open-row') : 'bye-row';
+        const cls = (m.ready ? (m.finished ? '' : 'open-row') : 'bye-row') + (abgeschlossen ? ' locked-row' : '');
 
         const name1 = m.ready
             ? `<span data-pname="${m.p1}">${esc(currentNames[m.p1])}</span> <span class="gbadge ${badgeClassOf(m.p1)}" style="margin-left:4px;">${m.l1}</span>`
@@ -2552,6 +3086,205 @@
     function badgeClassOf(idx) {
         const g = groupOf(idx);
         return g ? g.toLowerCase() : 'none';
+    }
+
+    // =====================================================================
+    // Phase 3: Platzierungsspiele der nicht qualifizierten Spieler
+    // =====================================================================
+    // Wer die KO-Runde nicht erreicht hat, bekommt seinen Platz bisher allein
+    // aus der Gruppenwertung. Phase 3 laesst diese Plaetze optional ausspielen:
+    // Die Spieler werden nach der Gruppenwertung gereiht und paarweise verknuepft
+    // (Erster gegen Zweiter, Dritter gegen Vierter und so fort). Jeder bestreitet
+    // genau ein Spiel; bei ungerader Anzahl bleibt der Letzte ohne Gegner.
+
+    // Startnummern der Spieler, die nicht im KO-Feld stehen
+    function nichtQualifizierte() {
+        if (!ko) return [];
+        const imKO = new Set(ko.seeds);
+        const rest = [];
+        activeGroups().forEach(grp => (groups[grp] || []).forEach(idx => { if (!imKO.has(idx)) rest.push(idx); }));
+        return rest;
+    }
+
+    // Paarungen der laufenden Phase 3 als [idxA, idxB]
+    function phase3Paare() {
+        if (!phase3) return [];
+        const paare = [];
+        for (let i = 0; i + 1 < phase3.order.length; i += 2) {
+            paare.push([phase3.order[i], phase3.order[i + 1]]);
+        }
+        return paare;
+    }
+
+    // Spieler ohne Gegner (nur bei ungerader Anzahl), sonst null
+    function phase3Solo() {
+        if (!phase3 || phase3.order.length % 2 === 0) return null;
+        return phase3.order[phase3.order.length - 1];
+    }
+
+    // Nicht beendete Duelle der Phase 3
+    function countOpenPhase3() {
+        return phase3Paare().filter((paar, i) =>
+            !isGameFinished(phase3Scores[pKey(i, 1)], phase3Scores[pKey(i, 2)], racePhase3)).length;
+    }
+
+    function startPhase3() {
+        if (!ko) {
+            alert('Phase 3 ist erst nach dem Start der KO-Runde möglich.\n\nErst dann steht fest, wer die KO-Runde nicht erreicht hat.');
+            return;
+        }
+        const rest = nichtQualifizierte();
+        if (rest.length < 2) {
+            alert('Für Phase 3 werden mindestens zwei Spieler benötigt, die die KO-Runde nicht erreicht haben.');
+            return;
+        }
+
+        // Reihung nach Gruppenwertung fixieren, danach paarweise ausspielen
+        const perf = collectGroupPerformance();
+        phase3 = {
+            order: sortByGroupPerformance(rest, perf),
+            abPlatz: ko.groupCount * ko.qual + 1
+        };
+
+        phase3Scores = {};
+        phase3Paare().forEach((paar, i) => {
+            phase3Scores[pKey(i, 1)] = 0;
+            phase3Scores[pKey(i, 2)] = 0;
+        });
+
+        renderPhase3();
+        renderFinalTable();
+        scheduleAutosave();
+    }
+
+    function resetPhase3() {
+        if (!confirm('Phase 3 zurücksetzen? Die Ergebnisse der Platzierungsspiele gehen verloren.\n\nDie unteren Plätze werden danach wieder aus der Gruppenwertung berechnet.')) return;
+        restorePunktAnlegen('Vor: Phase 3 zurücksetzen');
+        phase3 = null;
+        phase3Scores = {};
+        clearRoundLocks('p3');
+        renderPhase3();
+        renderFinalTable();
+        scheduleAutosave();
+        zeigeRestoreBanner('Phase 3 zurückgesetzt.');
+    }
+
+    // Eingabe eines Phase-3-Ergebnisses
+    function onPhase3ScoreInput(e) {
+        clampScoreInput(e.target, phase3Scores);
+        markTournamentStart();
+        renderPhase3();
+        renderFinalTable();
+        scheduleAutosave();
+    }
+
+    function renderPhase3() {
+        const statusBox = document.getElementById('phase3-status');
+        const btnStart = document.getElementById('btn-start-phase3');
+        const btnReset = document.getElementById('btn-reset-phase3');
+        const bracket = document.getElementById('phase3-bracket');
+        if (!statusBox) return;
+
+        // Race-to-Feld nur zeigen, solange Phase 3 überhaupt in Frage kommt
+        const rest = nichtQualifizierte();
+
+        if (!phase3) {
+            btnStart.style.display = '';
+            btnReset.style.display = 'none';
+            bracket.innerHTML = '';
+
+            if (!ko) {
+                btnStart.disabled = true;
+                statusBox.className = 'hint-box info';
+                statusBox.textContent = 'Phase 3 ist erst nach dem Start der KO-Runde möglich. Erst dann steht fest, wer die KO-Runde nicht erreicht hat.';
+            } else if (rest.length < 2) {
+                btnStart.disabled = true;
+                statusBox.className = 'hint-box info';
+                statusBox.textContent = rest.length === 0
+                    ? 'Alle Teilnehmer stehen im KO-Feld. Phase 3 entfällt.'
+                    : 'Nur ein Spieler hat die KO-Runde nicht erreicht. Für Phase 3 werden mindestens zwei benötigt.';
+            } else {
+                const abPlatz = koFieldSize() + 1;
+                btnStart.disabled = false;
+                statusBox.className = 'hint-box info';
+                statusBox.innerHTML = `<b>Optional.</b> ${rest.length} Spieler haben die KO-Runde nicht erreicht. ` +
+                    `Phase 3 spielt die Plätze ${abPlatz} bis ${abPlatz + rest.length - 1} aus (Race to ${racePhase3}), ` +
+                    `je ein Spiel pro Teilnehmer. Ohne Start bleibt es bei der Berechnung aus der Gruppenwertung.`;
+            }
+            return;
+        }
+
+        btnStart.style.display = 'none';
+        btnReset.style.display = '';
+
+        const offen = countOpenPhase3();
+        const solo = phase3Solo();
+        statusBox.className = offen > 0 ? 'hint-box info' : 'hint-box ok';
+        statusBox.innerHTML = offen > 0
+            ? `<b>Phase 3 läuft (Race to ${racePhase3}).</b> Noch ${offen} Spiel(e) nicht beendet. ` +
+              'Die Reihung aus der Gruppenwertung ist fixiert; Änderungen in Phase 1 wirken sich nicht mehr auf die Paarungen aus.'
+            : '<b>Phase 3 ist abgeschlossen.</b> Die unteren Plätze der Endtabelle stammen aus diesen Spielen.';
+
+        const gesperrt = isRoundLocked('p3');
+        const zeilen = phase3Paare().map((paar, i) => {
+            const [a, b] = paar;
+            const k1 = pKey(i, 1), k2 = pKey(i, 2);
+            const s1 = phase3Scores[k1], s2 = phase3Scores[k2];
+            const fertig = isGameFinished(s1, s2, racePhase3);
+            const platz = phase3.abPlatz + 2 * i;
+            const sieger = fertig ? (s1 > s2 ? a : b) : null;
+            return `
+                <tr class="match-row ${fertig ? '' : 'open-row'}${gesperrt ? ' locked-row' : ''}" data-p1="${a}" data-p2="${b}">
+                    <td style="color:#7f8c8d; font-weight:bold;">${i + 1}</td>
+                    <td class="player-name-cell" style="text-align:right;"><span data-pname="${a}">${esc(currentNames[a])}</span></td>
+                    <td class="score-cell">
+                        <input type="number" min="0" max="${maxFor(s2, racePhase3)}" class="score-input" data-store="p" data-race="${racePhase3}" data-key="${k1}" value="${s1 ?? ''}"${gesperrt ? ' disabled' : ''}>
+                        <span class="vs-text">:</span>
+                        <input type="number" min="0" max="${maxFor(s1, racePhase3)}" class="score-input" data-store="p" data-race="${racePhase3}" data-key="${k2}" value="${s2 ?? ''}"${gesperrt ? ' disabled' : ''}>
+                    </td>
+                    <td class="player-name-cell" style="text-align:left;"><span data-pname="${b}">${esc(currentNames[b])}</span></td>
+                    <td style="font-size:0.85rem; color:#7f8c8d; white-space:nowrap;">Platz ${platz} / ${platz + 1}</td>
+                    <td class="ko-winner-cell">${sieger !== null
+                        ? `<span class="ko-winner" data-pname="${sieger}">${esc(currentNames[sieger])}</span>`
+                        : '<span class="ko-pending">offen</span>'}</td>
+                </tr>`;
+        }).join('');
+
+        // Spieler ohne Gegner: behaelt den letzten Platz
+        const soloZeile = solo === null ? '' : `
+            <tr class="bye-row match-row" data-p1="${solo}" data-p2="-1">
+                <td>-</td>
+                <td colspan="3" style="text-align:left; padding-left:14px;">
+                    <span data-pname="${solo}" style="font-weight:600;">${esc(currentNames[solo])}</span>
+                    <span class="spielfrei-text">(kein Gegner)</span>
+                </td>
+                <td style="font-size:0.85rem; color:#7f8c8d; white-space:nowrap;">Platz ${phase3.abPlatz + phase3.order.length - 1}</td>
+                <td class="ko-winner-cell">-</td>
+            </tr>`;
+
+        bracket.innerHTML = `
+            <div class="ko-round-title">
+                <span class="ko-round-links">Platzierungsspiele${gesperrt ? '<span class="lock-badge abgeschlossen">abgeschlossen</span>' : ''}${roundButtonHtml('p3', offen)}</span>
+                <span class="meta">Race to ${racePhase3}</span>
+            </div>
+            <table class="table-style">
+                <thead>
+                    <tr>
+                        <th style="width:1%;">Spiel</th>
+                        <th>Spieler 1</th>
+                        <th style="width:150px;">Sätze</th>
+                        <th>Spieler 2</th>
+                        <th style="width:1%;">Plätze</th>
+                        <th style="width:1%;">Sieger</th>
+                    </tr>
+                </thead>
+                <tbody>${zeilen}${soloZeile}</tbody>
+            </table>`;
+
+        bracket.querySelectorAll('.score-input').forEach(input => input.addEventListener('input', onPhase3ScoreInput));
+        bracket.querySelectorAll('.round-btn').forEach(btn => btn.addEventListener('click', (e) => {
+            toggleRoundLock(e.currentTarget.dataset.roundKey);
+        }));
     }
 
     // ---------------------------------------------------------------------
@@ -2636,26 +3369,60 @@
         paar(r.fin, 'Sieger Finale', 'Finale', 1, 2);
         paar(r.bro, 'Sieger Spiel um Platz 3', 'Spiel um Platz 3', 3, 4);
 
-        // Plätze 5-8: Viertelfinal-Verlierer, nach der Gruppenphase gereiht.
-        // Punktgleiche teilen sich einen Platz (dichte Vergabe ab Platz 5).
-        const qfIds = ['qf1', 'qf2', 'qf3', 'qf4'];
-        const verlierer = qfIds.map(id => r[id].loser).filter(x => x !== null && x !== undefined);
-        const offeneQF = qfIds.filter(id => !r[id].finished).length;
-        const denseVerlierer = denseGroupRows(sortByGroupPerformance(verlierer, perf), perf, 5, 'Viertelfinale (Gruppenwertung)');
-        denseVerlierer.forEach(row => rows.push(row));
-        // Offene QF-Platzhalter zaehlen fortlaufend hinter dem letzten bekannten Platz.
-        let nextQF = denseVerlierer.length ? denseVerlierer[denseVerlierer.length - 1].place + 1 : 5;
-        for (let k = 0; k < offeneQF; k++) {
-            rows.push({ place: nextQF + k, idx: null, how: 'Viertelfinale offen', open: true, showRank: true });
+        // Weitere KO-Plaetze: die Verlierer der Runden von hinten nach vorn.
+        // Innerhalb einer Runde entscheidet die Gruppenwertung, Punktgleiche teilen
+        // sich einen Platz (dichte Vergabe).
+        const feld = ko.groupCount * ko.qual;
+        const runden = [];
+        if (feld >= 8) {
+            runden.push({ ids: ['qf1', 'qf2', 'qf3', 'qf4'], start: 5,
+                how: 'Viertelfinale (Gruppenwertung)', offen: 'Viertelfinale offen' });
         }
+        if (feld === 16) {
+            runden.push({ ids: ['af1', 'af2', 'af3', 'af4', 'af5', 'af6', 'af7', 'af8'], start: 9,
+                how: 'Achtelfinale (Gruppenwertung)', offen: 'Achtelfinale offen' });
+        }
+        runden.forEach(rd => {
+            const verlierer = rd.ids.map(id => r[id].loser).filter(x => x !== null && x !== undefined);
+            const offene = rd.ids.filter(id => !r[id].finished).length;
+            const dense = denseGroupRows(sortByGroupPerformance(verlierer, perf), perf, rd.start, rd.how);
+            dense.forEach(row => rows.push(row));
+            // Offene Platzhalter zaehlen fortlaufend hinter dem letzten bekannten Platz.
+            let naechster = dense.length ? dense[dense.length - 1].place + 1 : rd.start;
+            for (let k = 0; k < offene; k++) {
+                rows.push({ place: naechster + k, idx: null, how: rd.offen, open: true, showRank: true });
+            }
+        });
 
-        // Ab Platz 9: alle nicht qualifizierten Spieler nach Gruppenleistung.
-        // Anker bleibt strukturell bei 9, da immer genau 8 KO-Teilnehmer die
-        // Plaetze 1-8 belegen. Punktgleiche teilen sich einen Platz.
-        const imKO = new Set(ko.seeds);
-        const rest = [];
-        activeGroups().forEach(grp => (groups[grp] || []).forEach(idx => { if (!imKO.has(idx)) rest.push(idx); }));
-        denseGroupRows(sortByGroupPerformance(rest, perf), perf, 9, 'Gruppenphase').forEach(row => rows.push(row));
+        // Danach alle Spieler, die die KO-Runde nicht erreicht haben. Laeuft
+        // Phase 3, stammen ihre Plaetze aus den dortigen Duellen, sonst wie
+        // bisher aus der Gruppenwertung.
+        if (phase3) {
+            phase3Paare().forEach((paar, i) => {
+                const [a, b] = paar;
+                const s1 = phase3Scores[pKey(i, 1)], s2 = phase3Scores[pKey(i, 2)];
+                const platz = phase3.abPlatz + 2 * i;
+                if (isGameFinished(s1, s2, racePhase3)) {
+                    const sieger = s1 > s2 ? a : b;
+                    const verlierer = s1 > s2 ? b : a;
+                    rows.push({ place: platz, idx: sieger, how: 'Sieger Phase 3', open: false });
+                    rows.push({ place: platz + 1, idx: verlierer, how: 'Phase 3', open: false });
+                } else {
+                    // Solange offen: der oben eingetragene Spieler steht vorlaeufig vorn
+                    rows.push({ place: platz, idx: a, how: 'Phase 3 läuft', open: true });
+                    rows.push({ place: platz + 1, idx: b, how: 'Phase 3 läuft', open: true });
+                }
+            });
+            const solo = phase3Solo();
+            if (solo !== null) {
+                rows.push({ place: phase3.abPlatz + phase3.order.length - 1, idx: solo, how: 'Phase 3, kein Gegner', open: false });
+            }
+        } else {
+            const imKO = new Set(ko.seeds);
+            const rest = [];
+            activeGroups().forEach(grp => (groups[grp] || []).forEach(idx => { if (!imKO.has(idx)) rest.push(idx); }));
+            denseGroupRows(sortByGroupPerformance(rest, perf), perf, feld + 1, 'Gruppenphase').forEach(row => rows.push(row));
+        }
 
         return rows.map(row => Object.assign(row, {
             grp: row.idx !== null && row.idx !== undefined ? (perf[row.idx] ? perf[row.idx].grp : groupOf(row.idx)) : null,
@@ -2670,9 +3437,10 @@
         if (!ko) {
             tbody.innerHTML = '<tr><td colspan="5" style="color:#7f8c8d;">Die Endtabelle steht erst nach dem Start der KO-Runde zur Verfügung.</td></tr>';
             note.className = 'info-note';
-            note.textContent = 'Plätze 1 und 2 aus dem Finale, 3 und 4 aus dem Spiel um Platz 3, ' +
-                'die Plätze 5 bis 8 aus der Gruppenwertung der Viertelfinal-Verlierer. ' +
-                'Ab Platz 9 folgen die in der Gruppenphase ausgeschiedenen Spieler.';
+            note.textContent = 'Plätze 1 und 2 aus dem Finale, 3 und 4 aus dem Spiel um Platz 3. ' +
+                'Danach folgen die Verlierer der KO-Runden von hinten nach vorn, jeweils nach ' +
+                'Gruppenwertung gereiht, und zuletzt die in der Gruppenphase ausgeschiedenen Spieler. ' +
+                'Deren Plätze lassen sich in Phase 3 auch ausspielen.';
             return;
         }
 
@@ -2761,16 +3529,23 @@
             playerCount: playerCount,
             groupCount: groupCount,
             gameType: document.getElementById('game-type').value,
+            qualPerGroup: qualPerGroup,
             raceGroup: raceGroup,
+            raceR16: raceR16,
             raceQF: raceQF,
             raceSF: raceSF,
             raceFinal: raceFinal,
+            racePhase3: racePhase3,
+            phase3: phase3 ? JSON.parse(JSON.stringify(phase3)) : null,
+            phase3Scores: Object.assign({}, phase3Scores),
             pairingOption: pairingOption,
             currentNames: currentNames.slice(),
             groups: grpCopy,
             scores: Object.assign({}, scores),
             koScores: Object.assign({}, koScores),
+            seeded: Object.assign({}, seeded),
             manualOrder: JSON.parse(JSON.stringify(manualOrder)),
+            lockedRounds: Object.assign({}, lockedRounds),
             ko: ko ? JSON.parse(JSON.stringify(ko)) : null,
             tournamentStart: tournamentStart,
             drawCount: drawCount,
@@ -2791,10 +3566,18 @@
             ? snap.currentNames.slice()
             : DEFAULT_NAMES.slice(0, playerCount);
 
+        // Aeltere Staende kennen die waehlbare Qualifikantenzahl nicht. Dann gilt die
+        // Vorbelegung, die dem bisherigen Verhalten mit acht Qualifikanten entspricht.
+        const qualGeladen = parseInt(snap.qualPerGroup);
+        qualPerGroup = qualOptions(groupCount).indexOf(qualGeladen) !== -1 ? qualGeladen : defaultQual(groupCount);
+
         raceGroup = parseInt(snap.raceGroup) || 3;
+        raceR16   = parseInt(snap.raceR16)   || 3;
         raceQF    = parseInt(snap.raceQF)    || 3;
         raceSF    = parseInt(snap.raceSF)    || 3;
         raceFinal = parseInt(snap.raceFinal) || 3;
+        // Aeltere Staende kennen Phase 3 nicht
+        racePhase3 = parseInt(snap.racePhase3) || 3;
         pairingOption = (parseInt(snap.pairingOption) === 2) ? 2 : 1;
 
         const gs = ALL_GROUPS.slice(0, groupCount);
@@ -2811,15 +3594,35 @@
         scores = Object.assign({}, snap.scores || {});
         koScores = Object.assign({}, snap.koScores || {});
         manualOrder = (snap.manualOrder && typeof snap.manualOrder === 'object') ? snap.manualOrder : {};
+        // Aeltere Staende kennen keine gesetzten Spieler
+        seeded = (snap.seeded && typeof snap.seeded === 'object') ? Object.assign({}, snap.seeded) : {};
+        pruneSeeded();
+        // Aeltere Staende kennen keine abgeschlossenen Runden
+        lockedRounds = (snap.lockedRounds && typeof snap.lockedRounds === 'object') ? Object.assign({}, snap.lockedRounds) : {};
 
         ko = null;
-        if (snap.ko && Array.isArray(snap.ko.seeds) && snap.ko.seeds.length === 8) {
+        if (snap.ko && Array.isArray(snap.ko.seeds) && FIELD_SIZES.indexOf(snap.ko.seeds.length) !== -1) {
+            const koGruppen = (snap.ko.groupCount === 2 || snap.ko.groupCount === 4) ? snap.ko.groupCount : groupCount;
             ko = {
                 seeds: snap.ko.seeds.slice(),
                 option: (parseInt(snap.ko.option) === 2) ? 2 : 1,
-                groupCount: (snap.ko.groupCount === 2 || snap.ko.groupCount === 4) ? snap.ko.groupCount : groupCount,
+                groupCount: koGruppen,
+                // Aeltere Staende speichern die Qualifikantenzahl nicht; sie ergibt
+                // sich dann aus der Laenge der Setzliste.
+                qual: parseInt(snap.ko.qual) || (snap.ko.seeds.length / koGruppen),
                 ranking: (snap.ko.ranking && typeof snap.ko.ranking === 'object') ? snap.ko.ranking : {}
             };
+        }
+
+        phase3 = null;
+        phase3Scores = {};
+        if (snap.phase3 && Array.isArray(snap.phase3.order) && snap.phase3.order.length >= 2) {
+            phase3 = {
+                order: snap.phase3.order.slice(),
+                abPlatz: parseInt(snap.phase3.abPlatz) || (koFieldSize() + 1)
+            };
+            phase3Scores = (snap.phase3Scores && typeof snap.phase3Scores === 'object')
+                ? Object.assign({}, snap.phase3Scores) : {};
         }
 
         // Aeltere Staende kennen keinen Turnierstart, dann bleibt die Zeitspanne im Bericht leer
@@ -2837,6 +3640,7 @@
         fillPlayerCountSelect();
         document.getElementById('player-count').value = String(playerCount);
         document.getElementById('group-count').value = String(groupCount);
+        fillQualSelect();
         fillRaceSelects();
         document.getElementById('pairing-option').value = String(pairingOption);
         if (snap.gameType) {
@@ -2934,9 +3738,19 @@
     // wurde, also mehr als einmal ausgelost oder mindestens ein Spieler von Hand
     // die Gruppe gewechselt hat. Sonst bleibt der Rueckgabewert leer.
     function buildDrawNote() {
-        if (drawCount <= 1 && swapLog.length === 0) return '';
+        const gesetzteAnzahl = seededCount();
+        if (drawCount <= 1 && swapLog.length === 0 && gesetzteAnzahl === 0) return '';
 
         const zeilen = [];
+        if (gesetzteAnzahl > 0) {
+            zeilen.push(gesetzteAnzahl === 1
+                ? 'Ein Spieler wurde vor der Auslosung fest in eine Gruppe gesetzt:'
+                : `${gesetzteAnzahl} Spieler wurden vor der Auslosung fest in eine Gruppe gesetzt:`);
+            seedGroups().forEach(g => {
+                const l = seededOf(g).map(i => esc(currentNames[i]));
+                if (l.length) zeilen.push(`Gruppe ${g}: ${l.join(', ')}`);
+            });
+        }
         if (drawCount > 1) {
             zeilen.push(`Die Gruppen wurden ${drawCount} mal ausgelost. Gewertet wird die letzte Auslosung.`);
         }
@@ -2983,10 +3797,13 @@
         const date = formatDateDE(ende);
         const zeitraum = buildTimeRange(ende);
         const title = getTournamentName() || 'Turnierergebnis';
-        const raceInfo = `Race to ${raceGroup} (Gruppe) / ${raceQF} (VF) / ${raceSF} (HF) / ${raceFinal} (Finale)`;
+        const raceInfo = `Race to ${raceGroup} (Gruppe) / ` +
+            (koFieldSize() === 16 ? `${raceR16} (AF) / ` : '') +
+            `${raceQF} (VF) / ${raceSF} (HF) / ${raceFinal} (Finale)` +
+            (phase3 ? ` / ${racePhase3} (P3)` : '');
 
         let html = `<h1>${esc(title)}</h1>
-            <p class="sub">${groupCount} Gruppen mit KO-Runde &middot; ${esc(gameType)} &middot; ${raceInfo} &middot; ${playerCount} Teilnehmer &middot; ${date}${zeitraum}</p>`;
+            <p class="sub">${groupCount} Gruppen mit KO-Runde &middot; je ${qualifiersPerGroup()} weiter, KO-Feld ${koFieldSize()} &middot; ${esc(gameType)} &middot; ${raceInfo} &middot; ${playerCount} Teilnehmer &middot; ${date}${zeitraum}</p>`;
 
         if (!isDrawn()) {
             html += '<p>Es wurde noch keine Auslosung durchgeführt.</p>';
@@ -3013,12 +3830,12 @@
 
             // KO-Baum als Rundentabellen
             const r = resolveKO();
-            const labels = seedSlotLabels(ko.groupCount);
+            const labels = seedSlotLabels(ko.groupCount, ko.qual);
             html += `<h2 class="seite-neu">KO-Runde</h2>
                 <table class="table-style">
                     <thead><tr><th>Spiel</th><th>Spieler 1</th><th>Ergebnis</th><th>Spieler 2</th><th>Sieger</th></tr></thead>
                     <tbody>` +
-                KO_MATCHES.map(m => {
+                buildKoMatches(ko.groupCount * ko.qual).map(m => {
                     const x = r[m.id];
                     const n1 = x.ready ? esc(currentNames[x.p1]) : esc(x.l1);
                     const n2 = x.ready ? esc(currentNames[x.p2]) : esc(x.l2);
@@ -3035,6 +3852,39 @@
                 }).join('') +
                 `</tbody></table>`;
 
+            // Phase 3: Platzierungsspiele der nicht qualifizierten Spieler
+            if (phase3) {
+                html += `<h2>Phase 3 - Platzierungsspiele</h2>
+                    <p style="font-size:0.85rem; color:#555; margin-top:0;">Spieler, die die KO-Runde nicht erreicht haben, nach Gruppenwertung gereiht und paarweise ausgespielt.</p>
+                    <table class="table-style">
+                        <thead><tr><th>Spiel</th><th>Spieler 1</th><th>Ergebnis</th><th>Spieler 2</th><th>Plätze</th><th>Sieger</th></tr></thead>
+                        <tbody>` +
+                    phase3Paare().map((paar, i) => {
+                        const [a, b] = paar;
+                        const s1 = phase3Scores[pKey(i, 1)], s2 = phase3Scores[pKey(i, 2)];
+                        const fertig = isGameFinished(s1, s2, racePhase3);
+                        const platz = phase3.abPlatz + 2 * i;
+                        const erg = (s1 !== null && s1 !== undefined && s2 !== null && s2 !== undefined) ? `${s1} : ${s2}` : '- : -';
+                        return `
+                            <tr>
+                                <td>${i + 1}</td>
+                                <td style="text-align:right;">${esc(currentNames[a])}</td>
+                                <td style="font-weight:bold;">${erg}</td>
+                                <td style="text-align:left;">${esc(currentNames[b])}</td>
+                                <td>${platz} / ${platz + 1}</td>
+                                <td>${fertig ? esc(currentNames[s1 > s2 ? a : b]) : 'offen'}</td>
+                            </tr>`;
+                    }).join('') +
+                    (phase3Solo() === null ? '' : `
+                            <tr>
+                                <td>-</td>
+                                <td colspan="3" style="text-align:left;">${esc(currentNames[phase3Solo()])} (kein Gegner)</td>
+                                <td>${phase3.abPlatz + phase3.order.length - 1}</td>
+                                <td>-</td>
+                            </tr>`) +
+                    `</tbody></table>`;
+            }
+
             html += `<h2>Setzliste der KO-Runde</h2>
                 <table class="table-style">
                     <thead><tr><th>Startplatz</th><th>Bedeutung</th><th>Name</th></tr></thead>
@@ -3042,7 +3892,7 @@
                 ko.seeds.map((idx, k) => `
                     <tr>
                         <td>${labels[k]}</td>
-                        <td>${esc(seedSlotTitle(k, ko.groupCount))}</td>
+                        <td>${esc(seedSlotTitle(k, ko.groupCount, ko.qual))}</td>
                         <td style="text-align:left;">${esc(currentNames[idx])}</td>
                     </tr>`).join('') +
                 `</tbody></table>`;
