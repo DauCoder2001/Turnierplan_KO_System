@@ -12,7 +12,7 @@
          daher muss apple-touch-icon.png im selben Verzeichnis liegen. -->
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <meta name="apple-mobile-web-app-title" content="Turnierplan KO">
-    <title>Billard Turnierplan - Gruppen mit KO-Runde v57</title>
+    <title>Billard Turnierplan - Gruppen mit KO-Runde v59</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 1600px; margin: 0 auto; background-color: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
@@ -167,6 +167,10 @@
         .final-table tbody tr:nth-child(2) .rank-badge { background-color: #95a5a6; color: #fff; }
         .final-table tbody tr:nth-child(3) .rank-badge { background-color: #d35400; color: #fff; }
 
+
+        /* Knopfleiste unter der Endtabelle */
+        .export-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .export-label { font-size: 0.9rem; font-weight: bold; color: #2c3e50; margin-right: 2px; }
         .info-note { font-size: 0.85rem; color: #7f8c8d; margin-bottom: 12px; line-height: 1.35; }
 
         /* Gruppen nebeneinander. Bei vier Gruppen entsteht durch den Umbruch
@@ -405,7 +409,7 @@
 <div class="container">
     <div class="header-bar">
         <div class="title-group">
-            <h1><img class="logo" alt="Pool-Billard-Club Bassum e.V." src="data:image/png;base64,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">Billard Turnierplan - Gruppen mit KO-Runde<span class="versions-badge" title="Version dieser Datei">v57</span></h1>
+            <h1><img class="logo" alt="Pool-Billard-Club Bassum e.V." src="data:image/png;base64,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">Billard Turnierplan - Gruppen mit KO-Runde<span class="versions-badge" title="Version dieser Datei">v59</span></h1>
             <button id="btn-add-player" class="btn-add-player no-print" style="display:none;" title="Nachzügler in eine Gruppe mit Freilos aufnehmen: eingetragene Ergebnisse bleiben erhalten">Spieler nachtragen</button>
             <button id="btn-reset-all" class="btn-reset-all no-print" title="Neues Turnier starten: alle Eingaben werden gelöscht">Turnierplan zurücksetzen</button>
             <button id="btn-fullscreen" class="btn-fullscreen no-print" type="button" title="Vollbildmodus ein- oder ausschalten">Vollbild</button>
@@ -557,7 +561,12 @@
                         </thead>
                         <tbody id="final-body"></tbody>
                     </table>
-                    <button id="save-pdf-btn" class="btn btn-primary no-print">Turnierergebnis als PDF speichern</button>
+                    <div class="export-row no-print">
+                        <span class="export-label">Ergebnis als:</span>
+                        <button id="btn-pdf-download" class="btn btn-primary" title="PDF-Datei erzeugen und herunterladen. Braucht keinen PDF-Drucker, auf Tablets der zuverlässigere Weg.">PDF</button>
+                        <button id="btn-mail" class="btn btn-primary" title="Mailprogramm mit der Endtabelle als Text öffnen. Anhänge sind ohne Mailserver nicht möglich.">Mail</button>
+                        <button id="save-pdf-btn" class="btn btn-primary" title="Über den Druckdialog des Browsers ausgeben oder als PDF sichern">Druck</button>
+                    </div>
                 </div>
 
             </div>
@@ -790,6 +799,8 @@
         document.getElementById('btn-start-phase3').addEventListener('click', startPhase3);
         document.getElementById('btn-reset-phase3').addEventListener('click', resetPhase3);
         document.getElementById('btn-unlock-seeds').addEventListener('click', unlockSeeds);
+        document.getElementById('btn-pdf-download').addEventListener('click', ergebnisAlsPdf);
+        document.getElementById('btn-mail').addEventListener('click', ergebnisPerMail);
         document.getElementById('save-pdf-btn').addEventListener('click', () => {
             buildPrintReport();
             printReport();
@@ -3786,6 +3797,417 @@
             });
         }
         return `<div class="draw-note"><b>Hinweise zur Auslosung</b><br>${zeilen.join('<br>')}</div>`;
+    }
+
+
+    // =====================================================================
+    // PDF-Erzeugung ohne Fremdbibliothek
+    // =====================================================================
+    // Ein PDF ist eine Textdatei mit Objekten, Zeichenbefehlen und einer
+    // Verweistabelle am Ende. Fuer Tabellen in Helvetica genuegt das hier
+    // Aufgebaute vollstaendig. Vorteil gegenueber dem Druckdialog: Die Datei
+    // entsteht direkt im Browser und laesst sich auch auf Tablets ohne
+    // PDF-Drucker herunterladen.
+
+    const PDF_BREITE = 595.28;      // A4 hoch, Angaben in Punkt
+    const PDF_HOEHE = 841.89;
+    const PDF_RAND = 40;
+
+    // Zeichenbreiten der Standardschrift Helvetica in 1/1000 der Schriftgroesse,
+    // fuer die Zeichen 32 bis 126. Ohne diese Werte liessen sich Texte nicht
+    // rechtsbuendig oder mittig setzen.
+    const PDF_W_NORMAL = [
+        278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,
+        556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,
+        1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,
+        667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,
+        333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,
+        556,556,333,500,278,556,500,722,500,500,500,334,260,334,584
+    ];
+    const PDF_W_FETT = [
+        278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,
+        556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,
+        975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,
+        667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,
+        333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,
+        611,611,389,556,333,611,556,778,556,556,500,389,280,389,584
+    ];
+    // Deutsche Sonderzeichen und einige Satzzeichen: [normal, fett]
+    const PDF_W_SONDER = {
+        'ä': [556, 556], 'ö': [556, 611], 'ü': [556, 611], 'ß': [556, 611],
+        'Ä': [667, 722], 'Ö': [778, 778], 'Ü': [722, 722],
+        'é': [556, 556], 'è': [556, 556], 'á': [556, 556], 'à': [556, 556],
+        'ç': [500, 556], 'ñ': [556, 611], '·': [278, 278], '–': [556, 556],
+        '§': [556, 556], '°': [400, 400], '„': [333, 500], '“': [333, 500]
+    };
+
+    function pdfZeichenbreite(zeichen, fett) {
+        const code = zeichen.charCodeAt(0);
+        if (code >= 32 && code <= 126) return (fett ? PDF_W_FETT : PDF_W_NORMAL)[code - 32];
+        const s = PDF_W_SONDER[zeichen];
+        if (s) return s[fett ? 1 : 0];
+        return fett ? 611 : 556;       // unbekanntes Zeichen: mittlere Breite
+    }
+
+    // Breite eines Textes in Punkt
+    function pdfTextbreite(text, groesse, fett) {
+        let summe = 0;
+        for (let i = 0; i < text.length; i++) summe += pdfZeichenbreite(text[i], fett);
+        return summe * groesse / 1000;
+    }
+
+    // Text auf eine Hoechstbreite kuerzen, Rest durch Auslassungspunkte ersetzen
+    function pdfKuerzen(text, maxBreite, groesse, fett) {
+        if (pdfTextbreite(text, groesse, fett) <= maxBreite) return text;
+        let kurz = text;
+        while (kurz.length > 1 && pdfTextbreite(kurz + '...', groesse, fett) > maxBreite) {
+            kurz = kurz.slice(0, -1);
+        }
+        return kurz + '...';
+    }
+
+    // Text fuer den PDF-Strom aufbereiten: Steuerzeichen maskieren, Zeichen
+    // oberhalb von 127 als Oktalwert nach WinAnsi (entspricht Windows-1252).
+    function pdfEscape(text) {
+        let out = '';
+        for (let i = 0; i < text.length; i++) {
+            const z = text[i];
+            let code = z.charCodeAt(0);
+            if (z === '\\') { out += '\\\\'; continue; }
+            if (z === '(') { out += '\\('; continue; }
+            if (z === ')') { out += '\\)'; continue; }
+            if (code < 128) { out += z; continue; }
+            // Zeichen, die in Windows-1252 an anderer Stelle stehen als in Unicode
+            const abweichend = { 0x20AC: 128, 0x201A: 130, 0x0192: 131, 0x201E: 132,
+                0x2026: 133, 0x2020: 134, 0x2021: 135, 0x02C6: 136, 0x2030: 137,
+                0x0160: 138, 0x2039: 139, 0x0152: 140, 0x017D: 142, 0x2018: 145,
+                0x2019: 146, 0x201C: 147, 0x201D: 148, 0x2022: 149, 0x2013: 150,
+                0x2014: 151, 0x02DC: 152, 0x2122: 153, 0x0161: 154, 0x203A: 155,
+                0x0153: 156, 0x017E: 158, 0x0178: 159 };
+            if (abweichend[code] !== undefined) code = abweichend[code];
+            if (code > 255) code = 63;       // nicht darstellbar: Fragezeichen
+            out += '\\' + code.toString(8).padStart(3, '0');
+        }
+        return out;
+    }
+
+    // Neues Dokument mit einer ersten Seite
+    function pdfDokument() {
+        const dok = { seiten: [], strom: null, y: 0 };
+        pdfNeueSeite(dok);
+        return dok;
+    }
+
+    function pdfNeueSeite(dok) {
+        dok.strom = [];
+        dok.seiten.push(dok.strom);
+        dok.y = PDF_HOEHE - PDF_RAND;
+    }
+
+    // Sicherstellen, dass die angegebene Hoehe auf der Seite noch Platz hat
+    function pdfPlatz(dok, hoehe) {
+        if (dok.y - hoehe < PDF_RAND + 24) pdfNeueSeite(dok);
+    }
+
+    // Eine Textzeile setzen. ausrichtung: 'links', 'rechts' oder 'mitte'.
+    function pdfText(dok, text, x, breite, groesse, fett, ausrichtung, grauwert) {
+        const t = pdfKuerzen(String(text), breite, groesse, fett);
+        let px = x;
+        if (ausrichtung === 'rechts') px = x + breite - pdfTextbreite(t, groesse, fett);
+        else if (ausrichtung === 'mitte') px = x + (breite - pdfTextbreite(t, groesse, fett)) / 2;
+        const g = (grauwert === undefined) ? 0 : grauwert;
+        dok.strom.push(`${g} g BT /${fett ? 'F2' : 'F1'} ${groesse} Tf 1 0 0 1 ${px.toFixed(2)} ${dok.y.toFixed(2)} Tm (${pdfEscape(t)}) Tj ET 0 g`);
+    }
+
+    function pdfLinie(dok, x1, y1, x2, y2, dicke, grauwert) {
+        dok.strom.push(`${grauwert} G ${dicke} w ${x1.toFixed(2)} ${y1.toFixed(2)} m ${x2.toFixed(2)} ${y2.toFixed(2)} l S 0 G`);
+    }
+
+    function pdfRechteck(dok, x, y, breite, hoehe, grauwert) {
+        dok.strom.push(`${grauwert} g ${x.toFixed(2)} ${y.toFixed(2)} ${breite.toFixed(2)} ${hoehe.toFixed(2)} re f 0 g`);
+    }
+
+    // Ueberschrift. neueSeite erzwingt einen Seitenwechsel davor.
+    function pdfUeberschrift(dok, text, groesse, neueSeite) {
+        // Zusaetzlicher Platzbedarf, damit eine Ueberschrift nicht allein am
+        // Seitenende steht: Tabellenkopf und zwei Zeilen muessen noch passen.
+        if (neueSeite && dok.strom.length > 0) pdfNeueSeite(dok);
+        else pdfPlatz(dok, groesse + 52);
+        dok.y -= (dok.strom.length > 0 ? 10 : 0);
+        pdfText(dok, text, PDF_RAND, PDF_BREITE - 2 * PDF_RAND, groesse, true, 'links');
+        dok.y -= groesse * 0.4 + 6;
+    }
+
+    // Tabelle setzen. spalten: [{ text, align }], zeilen: [[text, ...], ...]
+    function pdfTabelle(dok, spalten, zeilen) {
+        const nutzbar = PDF_BREITE - 2 * PDF_RAND;
+        const GROESSE = 8.5;
+        const ZEILE = 13;
+
+        // Spaltenbreiten aus dem breitesten Inhalt je Spalte ableiten
+        const roh = spalten.map((sp, k) => {
+            let max = pdfTextbreite(sp.text, GROESSE, true);
+            zeilen.forEach(z => { max = Math.max(max, pdfTextbreite(String(z[k] ?? ''), GROESSE, false)); });
+            return max + 10;
+        });
+        const summe = roh.reduce((a, b) => a + b, 0);
+        const breiten = roh.map(b => b * nutzbar / summe);
+
+        const kopfZeichnen = () => {
+            pdfPlatz(dok, ZEILE * 2);
+            pdfRechteck(dok, PDF_RAND, dok.y - 3.5, nutzbar, ZEILE, 0.90);
+            let x = PDF_RAND;
+            spalten.forEach((sp, k) => {
+                pdfText(dok, sp.text, x + 4, breiten[k] - 8, GROESSE, true, sp.align || 'links');
+                x += breiten[k];
+            });
+            dok.y -= ZEILE;
+            pdfLinie(dok, PDF_RAND, dok.y + 9.5, PDF_BREITE - PDF_RAND, dok.y + 9.5, 0.6, 0.45);
+        };
+
+        kopfZeichnen();
+        zeilen.forEach(z => {
+            if (dok.y - ZEILE < PDF_RAND + 24) { pdfNeueSeite(dok); kopfZeichnen(); }
+            let x = PDF_RAND;
+            spalten.forEach((sp, k) => {
+                pdfText(dok, String(z[k] ?? ''), x + 4, breiten[k] - 8, GROESSE, false, sp.align || 'links');
+                x += breiten[k];
+            });
+            dok.y -= ZEILE;
+            pdfLinie(dok, PDF_RAND, dok.y + 9.5, PDF_BREITE - PDF_RAND, dok.y + 9.5, 0.3, 0.80);
+        });
+        dok.y -= 6;
+    }
+
+    // Fertiges PDF als Byte-Folge. Enthaelt Catalog, Seitenbaum, zwei
+    // Standardschriften und je Seite einen Inhaltsstrom.
+    function pdfBauen(dok, titel) {
+        const objekte = [];
+        const seitenAnzahl = dok.seiten.length;
+
+        // Seitennummern nachtragen
+        dok.seiten.forEach((strom, i) => {
+            const text = `Seite ${i + 1} von ${seitenAnzahl}`;
+            const breite = pdfTextbreite(text, 7.5, false);
+            strom.push(`0.45 g BT /F1 7.5 Tf 1 0 0 1 ${(PDF_BREITE - PDF_RAND - breite).toFixed(2)} ${(PDF_RAND - 12).toFixed(2)} Tm (${pdfEscape(text)}) Tj ET 0 g`);
+        });
+
+        objekte[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+        const seitenIds = dok.seiten.map((_, i) => 5 + i * 2);
+        objekte[2] = `<< /Type /Pages /Kids [${seitenIds.map(id => id + ' 0 R').join(' ')}] /Count ${seitenAnzahl} >>`;
+        objekte[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+        objekte[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+
+        dok.seiten.forEach((strom, i) => {
+            const seiteId = 5 + i * 2;
+            const inhaltId = seiteId + 1;
+            objekte[seiteId] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PDF_BREITE} ${PDF_HOEHE}] ` +
+                `/Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${inhaltId} 0 R >>`;
+            const inhalt = strom.join('\n');
+            objekte[inhaltId] = `<< /Length ${inhalt.length} >>\nstream\n${inhalt}\nendstream`;
+        });
+
+        objekte[5 + seitenAnzahl * 2] = '<< /Title (' + pdfEscape(titel || 'Turnierergebnis') +
+            ') /Producer (Billard Turnierplan) >>';
+        const infoId = 5 + seitenAnzahl * 2;
+
+        let datei = '%PDF-1.4\n';
+        const versatz = [];
+        for (let i = 1; i <= infoId; i++) {
+            if (objekte[i] === undefined) continue;
+            versatz[i] = datei.length;
+            datei += `${i} 0 obj\n${objekte[i]}\nendobj\n`;
+        }
+        const xrefStart = datei.length;
+        datei += `xref\n0 ${infoId + 1}\n0000000000 65535 f \n`;
+        for (let i = 1; i <= infoId; i++) {
+            const v = versatz[i] === undefined ? 0 : versatz[i];
+            datei += String(v).padStart(10, '0') + ' 00000 n \n';
+        }
+        datei += `trailer\n<< /Size ${infoId + 1} /Root 1 0 R /Info ${infoId} 0 R >>\nstartxref\n${xrefStart}\n%%EOF\n`;
+
+        const bytes = new Uint8Array(datei.length);
+        for (let i = 0; i < datei.length; i++) bytes[i] = datei.charCodeAt(i) & 0xFF;
+        return bytes;
+    }
+
+    // ---------------------------------------------------------------------
+    // Den vorhandenen HTML-Bericht in das PDF uebertragen
+    // ---------------------------------------------------------------------
+    // So stimmen Druckausgabe und Download immer ueberein: Der Bericht wird
+    // einmal aufgebaut und anschliessend Abschnitt fuer Abschnitt gelesen.
+    function pdfAusBericht() {
+        buildPrintReport();
+        const quelle = document.getElementById('print-report');
+        const dok = pdfDokument();
+
+        const tabelleUebernehmen = (tabelle) => {
+            const kopf = Array.from(tabelle.querySelectorAll('thead th, tbody tr:first-child th'));
+            const koerper = Array.from(tabelle.querySelectorAll('tbody tr')).filter(tr => !tr.querySelector('th'));
+            if (koerper.length === 0) return;
+            const spalten = kopf.length > 0
+                ? kopf.map(th => ({ text: th.textContent.trim(), align: pdfAusrichtung(th) }))
+                : Array.from(koerper[0].children).map(() => ({ text: '', align: 'links' }));
+            const zeilen = koerper.map(tr => Array.from(tr.children).map(td => td.textContent.trim()));
+            // Ausrichtung der Datenspalten aus der ersten Zeile uebernehmen
+            Array.from(koerper[0].children).forEach((td, k) => {
+                if (spalten[k]) spalten[k].align = pdfAusrichtung(td);
+            });
+            pdfTabelle(dok, spalten, zeilen);
+        };
+
+        Array.from(quelle.children).forEach(el => {
+            const tag = el.tagName;
+            if (tag === 'H1') {
+                pdfText(dok, el.textContent.trim(), PDF_RAND, PDF_BREITE - 2 * PDF_RAND, 15, true, 'links');
+                dok.y -= 18;
+            } else if (tag === 'H2') {
+                pdfUeberschrift(dok, el.textContent.trim(), 11, el.classList.contains('seite-neu'));
+            } else if (tag === 'P') {
+                pdfPlatz(dok, 14);
+                pdfText(dok, el.textContent.trim(), PDF_RAND, PDF_BREITE - 2 * PDF_RAND, 8, false, 'links', 0.35);
+                dok.y -= 14;
+            } else if (tag === 'TABLE' && el.classList.contains('rounds-grid')) {
+                // Aeusseres Raster: im Ausdruck stehen die Gruppen nebeneinander,
+                // im PDF nacheinander. Deshalb spaltenweise auslesen, damit alle
+                // Runden einer Gruppe zusammenbleiben.
+                const rasterZeilen = Array.from(el.querySelectorAll(':scope > tbody > tr'));
+                const spaltenZahl = rasterZeilen.length > 0 ? rasterZeilen[0].children.length : 0;
+                for (let sp = 0; sp < spaltenZahl; sp++) {
+                    rasterZeilen.forEach(tr => {
+                        const zelle = tr.children[sp];
+                        if (!zelle) return;
+                        const gruppenKopf = zelle.querySelector('h2');
+                        if (gruppenKopf) pdfUeberschrift(dok, gruppenKopf.textContent.trim(), 11, false);
+                        const rt = zelle.querySelector('.round-table');
+                        if (!rt) return;
+                        const rundenKopf = rt.querySelector('th');
+                        if (rundenKopf) pdfUeberschrift(dok, rundenKopf.textContent.trim(), 9, false);
+                        const zeilen = Array.from(rt.querySelectorAll('tbody tr'))
+                            .filter(z => !z.querySelector('th'))
+                            .map(z => Array.from(z.children).map(td => td.textContent.trim()));
+                        if (zeilen.length === 0) return;
+                        pdfTabelle(dok, [
+                            { text: 'Spieler 1', align: 'rechts' },
+                            { text: 'Ergebnis', align: 'mitte' },
+                            { text: 'Spieler 2', align: 'links' }
+                        ], zeilen);
+                    });
+                }
+            } else if (tag === 'TABLE') {
+                tabelleUebernehmen(el);
+            } else if (tag === 'DIV') {
+                // Fussnote am Berichtsende
+                pdfPlatz(dok, 26);
+                dok.y -= 6;
+                pdfLinie(dok, PDF_RAND, dok.y + 8, PDF_BREITE - PDF_RAND, dok.y + 8, 0.5, 0.7);
+                el.innerHTML.split(/<br\s*\/?>/i).forEach(teil => {
+                    const text = teil.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+                        .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+                    if (!text) return;
+                    pdfPlatz(dok, 12);
+                    pdfText(dok, text, PDF_RAND, PDF_BREITE - 2 * PDF_RAND, 8, false, 'links', 0.3);
+                    dok.y -= 11;
+                });
+            }
+        });
+        return dok;
+    }
+
+    // Ausrichtung einer Tabellenzelle aus ihrem Stil ableiten
+    function pdfAusrichtung(zelle) {
+        const stil = (zelle.getAttribute('style') || '');
+        if (/text-align\s*:\s*right/.test(stil)) return 'rechts';
+        if (/text-align\s*:\s*left/.test(stil)) return 'links';
+        return 'mitte';
+    }
+
+    // Dateiname ohne Sonderzeichen
+    function pdfDateiname() {
+        const name = (getTournamentName() || 'Turnierergebnis').replace(/[^a-zA-Z0-9_\-]+/g, '_');
+        return `${name}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    }
+
+    // Erzeugen und herunterladen
+    function ergebnisAlsPdf() {
+        try {
+            const dok = pdfAusBericht();
+            const bytes = pdfBauen(dok, getTournamentName() || 'Turnierergebnis');
+            const blob = new Blob([bytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = pdfDateiname();
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+            showStatus('PDF wurde erzeugt (' + dok.seiten.length + ' Seite(n)).');
+        } catch (e) {
+            showStatus('PDF konnte nicht erzeugt werden: ' + e.message, true);
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Ergebnis per E-Mail
+    // ---------------------------------------------------------------------
+    // Eine eigenstaendige Datei kann ohne Server keine Mail verschicken und
+    // auch nichts anhaengen. Deshalb wird das Mailprogramm mit fertigem
+    // Betreff und Text geoeffnet; die Endtabelle steht als Klartext im Text.
+    function ergebnisAlsMailtext() {
+        buildPrintReport();
+        const quelle = document.getElementById('print-report');
+        const kinder = Array.from(quelle.children);
+
+        const kopf = [];
+        const h1 = kinder.find(el => el.tagName === 'H1');
+        const sub = kinder.find(el => el.tagName === 'P' && el.classList.contains('sub'));
+        if (h1) kopf.push(h1.textContent.trim());
+        if (sub) kopf.push(sub.textContent.trim().replace(/\s*·\s*/g, ' | '));
+
+        // Erste Tabelle hinter einer Ueberschrift mit "Endtabelle", "Endstand"
+        // oder "Rangliste"; sonst schlicht die erste Tabelle des Berichts.
+        let tabelle = null;
+        for (let i = 0; i < kinder.length; i++) {
+            if (kinder[i].tagName === 'H2' && /Endtabelle|Endstand|Rangliste|Abschlusstabelle/i.test(kinder[i].textContent)) {
+                tabelle = kinder.slice(i + 1).find(el => el.tagName === 'TABLE');
+                break;
+            }
+        }
+        if (!tabelle) tabelle = kinder.find(el => el.tagName === 'TABLE');
+        if (!tabelle) return { betreff: kopf[0] || 'Turnierergebnis', text: kopf.join('\n') };
+
+        const spalten = Array.from(tabelle.querySelectorAll('thead th')).map(th => th.textContent.trim());
+        const zeilen = Array.from(tabelle.querySelectorAll('tbody tr'))
+            .map(tr => Array.from(tr.children).map(td => td.textContent.trim()));
+
+        // Spaltenbreiten fuer eine einfache Textausrichtung
+        const breiten = spalten.map((s, k) =>
+            Math.max(s.length, ...zeilen.map(z => (z[k] || '').length)));
+        const zeileBauen = (werte) => werte.map((w, k) => String(w || '').padEnd(breiten[k])).join('  ').trimEnd();
+
+        const text = kopf.join('\n') + '\n\n' +
+            zeileBauen(spalten) + '\n' +
+            breiten.map(b => '-'.repeat(b)).join('  ') + '\n' +
+            zeilen.map(zeileBauen).join('\n') + '\n';
+
+        const datum = formatDateDE(new Date());
+        const betreff = `Turnierergebnis ${getTournamentName() || ''}`.trim() + ` vom ${datum}`;
+        return { betreff: betreff, text: text };
+    }
+
+    function ergebnisPerMail() {
+        try {
+            const m = ergebnisAlsMailtext();
+            const url = 'mailto:?subject=' + encodeURIComponent(m.betreff) + '&body=' + encodeURIComponent(m.text);
+            // Sehr lange Adressen kuerzen manche Mailprogramme stillschweigend
+            if (url.length > 6000) {
+                showStatus('Der Text ist sehr lang, das Mailprogramm kürzt ihn möglicherweise.', true);
+            }
+            window.location.href = url;
+        } catch (e) {
+            showStatus('E-Mail konnte nicht vorbereitet werden: ' + e.message, true);
+        }
     }
 
     // Der Browser nutzt beim Druck-Dialog ("Als PDF speichern") den document.title
